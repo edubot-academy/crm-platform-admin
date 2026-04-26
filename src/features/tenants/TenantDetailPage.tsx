@@ -8,14 +8,31 @@ import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { ArrowLeft, Globe, CreditCard, Users, Settings, FileText } from 'lucide-react';
 import { tenantApi, type Tenant, type UpdateTenantData } from './tenantApi';
+import { tenantDomainsApi, type TenantDomain, type CreateTenantDomainDto } from './tenantDomainsApi';
+import { tenantUsersApi, type TenantUserSummary, type GetTenantUsersParams } from './tenantUsersApi';
+import { tenantSettingsApi, type TenantConfig, type UpdateTenantConfigDto } from './tenantSettingsApi';
 import { plansApi, type Plan } from '../plans/plansApi';
 
 export function TenantDetailPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [domains, setDomains] = useState<TenantDomain[]>([]);
+  const [users, setUsers] = useState<TenantUserSummary[]>([]);
+  const [usersPagination, setUsersPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+  });
+  const [settings, setSettings] = useState<TenantConfig | null>(null);
+  const [settingsForm, setSettingsForm] = useState<UpdateTenantConfigDto>({});
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [plansLoading, setPlansLoading] = useState(false);
+  const [domainsLoading, setDomainsLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -24,6 +41,10 @@ export function TenantDetailPage() {
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
   const [planAssignLoading, setPlanAssignLoading] = useState(false);
+  const [showCreateDomainModal, setShowCreateDomainModal] = useState(false);
+  const [createDomainForm, setCreateDomainForm] = useState<CreateTenantDomainDto>({ domain: '', type: 'default' });
+  const [domainActionLoading, setDomainActionLoading] = useState<string | null>(null);
+  const [userActionLoading, setUserActionLoading] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -46,7 +67,6 @@ export function TenantDetailPage() {
       setSelectedPlanId(data.planId || '');
     } catch (err: any) {
       setError('Тенантты жүктөөдө ката кетти');
-      console.error('Failed to load tenant:', err);
     } finally {
       setLoading(false);
     }
@@ -58,9 +78,62 @@ export function TenantDetailPage() {
       const data = await plansApi.getPlans();
       setPlans(data.filter(p => p.status === 'active'));
     } catch (err: any) {
-      console.error('Failed to load plans:', err);
     } finally {
       setPlansLoading(false);
+    }
+  };
+
+  const loadDomains = async () => {
+    setDomainsLoading(true);
+    setError('');
+    try {
+      const data = await tenantDomainsApi.getTenantDomains(tenantId!);
+      setDomains(data);
+    } catch (err: any) {
+      setError('Домендерди жүктөөдө ката кетти');
+    } finally {
+      setDomainsLoading(false);
+    }
+  };
+
+  const loadUsers = async (params: GetTenantUsersParams = {}) => {
+    setUsersLoading(true);
+    setError('');
+    try {
+      const data = await tenantUsersApi.getTenantUsers(tenantId!, params);
+      setUsers(data.items);
+      setUsersPagination({
+        total: data.total,
+        page: data.page,
+        limit: data.limit,
+        totalPages: data.totalPages,
+      });
+    } catch (err: any) {
+      setError('Колдонуучуларды жүктөөдө ката кетти');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    setSettingsLoading(true);
+    setError('');
+    try {
+      const data = await tenantSettingsApi.getTenantSettings(tenantId!);
+      setSettings(data);
+      setSettingsForm({
+        defaultLanguage: data.defaultLanguage,
+        timezone: data.timezone,
+        currency: data.currency,
+        supportEmail: data.supportEmail,
+        metadata: {
+          platformNotes: data.metadata?.platformNotes || '',
+        },
+      });
+    } catch (err: any) {
+      setError('Жөндөөлөрдү жүктөөдө ката кетти');
+    } finally {
+      setSettingsLoading(false);
     }
   };
 
@@ -73,6 +146,24 @@ export function TenantDetailPage() {
   useEffect(() => {
     if (activeTab === 'plan') {
       loadPlans();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'domains') {
+      loadDomains();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      loadUsers();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      loadSettings();
     }
   }, [activeTab]);
 
@@ -144,9 +235,137 @@ export function TenantDetailPage() {
     }
   };
 
+  const handleCreateDomain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createDomainForm.domain) {
+      setError('Доменди киргизиңиз');
+      return;
+    }
+
+    setDomainActionLoading('create');
+    setError('');
+    setSuccess('');
+
+    try {
+      await tenantDomainsApi.createTenantDomain(tenantId!, createDomainForm);
+      setSuccess('Домен ийгиликтүү түзүлдү');
+      toast.success('Домен ийгиликтүү түзүлдү');
+      setShowCreateDomainModal(false);
+      setCreateDomainForm({ domain: '', type: 'default' });
+      loadDomains();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Доменди түзүүдө ката кетти');
+      toast.error(err.response?.data?.message || 'Доменди түзүүдө ката кетти');
+    } finally {
+      setDomainActionLoading(null);
+    }
+  };
+
+  const handleSetPrimary = async (domainId: string) => {
+    setDomainActionLoading(domainId);
+    setError('');
+    setSuccess('');
+
+    try {
+      await tenantDomainsApi.setDomainPrimary(domainId, true);
+      setSuccess('Негизги домен ийгиликтүү өзгөртүлдү');
+      toast.success('Негизги домен ийгиликтүү өзгөртүлдү');
+      loadDomains();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Негизги доменди өзгөртүүдө ката кетти');
+      toast.error(err.response?.data?.message || 'Негизги доменди өзгөртүүдө ката кетти');
+    } finally {
+      setDomainActionLoading(null);
+    }
+  };
+
+  const handleUpdateDomainStatus = async (domainId: string, newStatus: 'active' | 'pending' | 'failed' | 'disabled') => {
+    setDomainActionLoading(domainId);
+    setError('');
+    setSuccess('');
+
+    try {
+      await tenantDomainsApi.updateDomainStatus(domainId, { status: newStatus });
+      setSuccess('Домен статусу ийгиликтүү өзгөртүлдү');
+      toast.success('Домен статусу ийгиликтүү өзгөртүлдү');
+      loadDomains();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Домен статусун өзгөртүүдө ката кетти');
+      toast.error(err.response?.data?.message || 'Домен статусун өзгөртүүдө ката кетти');
+    } finally {
+      setDomainActionLoading(null);
+    }
+  };
+
+  const handleUpdateUserStatus = async (userId: string, newStatus: 'active' | 'inactive' | 'suspended' | boolean) => {
+    setUserActionLoading(userId);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Convert string status to boolean to match backend format
+      const statusValue = newStatus === 'active' ? true : false;
+      await tenantUsersApi.updateTenantUserStatus(tenantId!, userId, { status: statusValue });
+      setSuccess('Колдонуучу статусу ийгиликтүү өзгөртүлдү');
+      toast.success('Колдонуучу статусу ийгиликтүү өзгөртүлдү');
+      setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+      loadUsers();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Колдонуучу статусун өзгөртүүдө ката кетти');
+      toast.error(err.response?.data?.message || 'Колдонуучу статусун өзгөртүүдө ката кетти');
+      setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setSettingsSaving(true);
+
+    try {
+      await tenantSettingsApi.updateTenantSettings(tenantId!, settingsForm);
+      setSuccess('Жөндөөлөр ийгиликтүү жаңыртылды');
+      toast.success('Жөндөөлөр ийгиликтүү жаңыртылды');
+      loadSettings();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Жөндөөлөрдү жаңыртууда ката кетти');
+      toast.error(err.response?.data?.message || 'Жөндөөлөрдү жаңыртууда ката кетти');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variant = status === 'active' ? 'success' : status === 'suspended' ? 'danger' : status === 'archived' ? 'neutral' : 'warning';
     const label = status === 'active' ? 'Активдүү' : status === 'suspended' ? 'Токтотулган' : status === 'archived' ? 'Архивделген' : 'Актив эмес';
+    return <Badge variant={variant}>{label}</Badge>;
+  };
+
+  const getDomainStatusBadge = (status: string) => {
+    const variant = status === 'active' ? 'success' : status === 'pending' ? 'warning' : status === 'failed' ? 'danger' : 'neutral';
+    const label = status === 'active' ? 'Активдүү' : status === 'pending' ? 'Күтүүдө' : status === 'failed' ? 'Иштебей калган' : 'Өчүрүлгөн';
+    return <Badge variant={variant}>{label}</Badge>;
+  };
+
+  const getDomainTypeBadge = (type: string) => {
+    const variant = type === 'default' ? 'neutral' : 'info';
+    const label = type === 'default' ? 'Жарыяланган' : 'Кастом';
+    return <Badge variant={variant}>{label}</Badge>;
+  };
+
+  const getUserStatusBadge = (status: string | boolean) => {
+    const isActive = status === true || status === 'active';
+    const variant = isActive ? 'success' : 'warning';
+    const label = isActive ? 'Активдүү' : 'Актив эмес';
+    return <Badge variant={variant}>{label}</Badge>;
+  };
+
+  const getUserRoleBadge = (role: string) => {
+    const variant = role === 'admin' ? 'success' : role === 'manager' ? 'info' : role === 'sales' ? 'warning' : 'neutral';
+    const label = role === 'admin' ? 'Админ' : role === 'manager' ? 'Менеджер' : role === 'sales' ? 'Сатуу адиси' : 'Ассистент';
     return <Badge variant={variant}>{label}</Badge>;
   };
 
@@ -426,7 +645,303 @@ export function TenantDetailPage() {
         </div>
       )}
 
-      {activeTab !== 'overview' && activeTab !== 'plan' && (
+      {activeTab === 'domains' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Тенант домендери</h2>
+                <Button onClick={() => setShowCreateDomainModal(true)}>
+                  Домен кошуу
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {domainsLoading ? (
+                <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+              ) : domains.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Домендер жок</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Домен</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Түрү</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Негизги</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Текшерилген</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Түзүлгөн күнү</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Аракеттер</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {domains.map((domain) => (
+                        <tr key={domain.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{domain.domain}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{getDomainTypeBadge(domain.type)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{getDomainStatusBadge(domain.status)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {domain.isPrimary ? (
+                              <Badge variant="success">Негизги</Badge>
+                            ) : (
+                              <span className="text-sm text-gray-500">Жок</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {domain.isVerified ? (
+                              <Badge variant="success">Текшерилген</Badge>
+                            ) : (
+                              <span className="text-sm text-gray-500">Текшерилбеген</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(domain.createdAt).toLocaleDateString('ky-KG')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              {!domain.isPrimary && domain.status === 'active' && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleSetPrimary(domain.id.toString())}
+                                  disabled={domainActionLoading === domain.id.toString()}
+                                >
+                                  {domainActionLoading === domain.id.toString() ? 'Күтүүдө...' : 'Негизги кылуу'}
+                                </Button>
+                              )}
+                              {domain.status === 'active' && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleUpdateDomainStatus(domain.id.toString(), 'disabled')}
+                                  disabled={domainActionLoading === domain.id.toString()}
+                                >
+                                  {domainActionLoading === domain.id.toString() ? 'Күтүүдө...' : 'Өчүрүү'}
+                                </Button>
+                              )}
+                              {domain.status === 'disabled' && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleUpdateDomainStatus(domain.id.toString(), 'active')}
+                                  disabled={domainActionLoading === domain.id.toString()}
+                                >
+                                  {domainActionLoading === domain.id.toString() ? 'Күтүүдө...' : 'Активдештирүү'}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Тенант колдонуучулары</h2>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Колдонуучулар жок</div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Аты-жөнү</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Акыркы кирүү</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Түзүлгөн күнү</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Аракеттер</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {users.map((user) => (
+                          <tr key={user.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{getUserRoleBadge(user.role)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{getUserStatusBadge(user.status)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ky-KG') : 'Кирген эмес'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(user.createdAt).toLocaleDateString('ky-KG')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                {(user.status === true || user.status === 'active') && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                      setConfirmDialog({
+                                        isOpen: true,
+                                        title: 'Колдонуучуну өчүрүү',
+                                        message: `${user.name} колдонуучусун өчүрүүгө ишенесизби?`,
+                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), 'inactive'),
+                                      });
+                                    }}
+                                    disabled={userActionLoading === user.id.toString()}
+                                  >
+                                    {userActionLoading === user.id.toString() ? 'Күтүүдө...' : 'Өчүрүү'}
+                                  </Button>
+                                )}
+                                {(user.status === false || user.status === 'inactive' || user.status === 'suspended') && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                      setConfirmDialog({
+                                        isOpen: true,
+                                        title: 'Колдонуучуну активдештирүү',
+                                        message: `${user.name} колдонуучусун активдештирүүгө ишенесизби?`,
+                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), 'active'),
+                                      });
+                                    }}
+                                    disabled={userActionLoading === user.id.toString()}
+                                  >
+                                    {userActionLoading === user.id.toString() ? 'Күтүүдө...' : 'Активдештирүү'}
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {usersPagination.totalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="text-sm text-gray-500">
+                        {usersPagination.total} колдонуучу, {usersPagination.page} барак / {usersPagination.totalPages}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => loadUsers({ page: usersPagination.page - 1, limit: usersPagination.limit })}
+                          disabled={usersPagination.page === 1 || usersLoading}
+                        >
+                          Мурунку
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => loadUsers({ page: usersPagination.page + 1, limit: usersPagination.limit })}
+                          disabled={usersPagination.page === usersPagination.totalPages || usersLoading}
+                        >
+                          Кийинки
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Платформа жөндөөлөрү</h2>
+            </CardHeader>
+            <CardContent>
+              {settingsLoading ? (
+                <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+              ) : settings ? (
+                <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      label="Демейки тил"
+                      value={settingsForm.defaultLanguage || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, defaultLanguage: e.target.value })}
+                      placeholder="ky"
+                    />
+                    <Input
+                      label="Убакыт алкагы"
+                      value={settingsForm.timezone || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, timezone: e.target.value })}
+                      placeholder="Asia/Bishkek"
+                    />
+                    <Input
+                      label="Валюта"
+                      value={settingsForm.currency || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, currency: e.target.value })}
+                      placeholder="KGS"
+                    />
+                    <Input
+                      label="Колдоо email"
+                      type="email"
+                      value={settingsForm.supportEmail || ''}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, supportEmail: e.target.value })}
+                      placeholder="support@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Платформа эскертмеси
+                    </label>
+                    <textarea
+                      value={settingsForm.metadata?.platformNotes || ''}
+                      onChange={(e) => setSettingsForm({
+                        ...settingsForm,
+                        metadata: { ...settingsForm.metadata, platformNotes: e.target.value }
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows={3}
+                      placeholder="Платформа админдары үчүн эскертмелер..."
+                    />
+                  </div>
+
+                  {/* Read-only enabled modules */}
+                  <div className="border-t pt-6">
+                    <h3 className="text-md font-semibold text-gray-900 mb-4">Модулдар</h3>
+                    {settings.enabledModules && settings.enabledModules.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {settings.enabledModules.map((module) => (
+                          <Badge key={module} variant="success">
+                            {module}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Модулдар жок</p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={settingsSaving}>
+                      {settingsSaving ? 'Сактоо...' : 'Сактоо'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="text-center py-8 text-gray-500">Жөндөөлөр табылган жок</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab !== 'overview' && activeTab !== 'plan' && activeTab !== 'domains' && activeTab !== 'users' && activeTab !== 'settings' && (
         <Card>
           <CardContent className="p-8 text-center text-gray-500">
             Бул бөлүк азырынча иштелип чыккан жок
@@ -441,6 +956,57 @@ export function TenantDetailPage() {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } })}
       />
+
+      {/* Create Domain Modal */}
+      {showCreateDomainModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Жаңы домен кошуу</h2>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateDomain} className="space-y-4">
+                <Input
+                  label="Домен"
+                  value={createDomainForm.domain}
+                  onChange={(e) => setCreateDomainForm({ ...createDomainForm, domain: e.target.value })}
+                  placeholder="example.com"
+                  required
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Түрү
+                  </label>
+                  <select
+                    value={createDomainForm.type}
+                    onChange={(e) => setCreateDomainForm({ ...createDomainForm, type: e.target.value as 'default' | 'custom' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="default">Жарыяланган</option>
+                    <option value="custom">Кастом</option>
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowCreateDomainModal(false);
+                      setCreateDomainForm({ domain: '', type: 'default' });
+                    }}
+                    disabled={domainActionLoading === 'create'}
+                  >
+                    Жокко чыгаруу
+                  </Button>
+                  <Button type="submit" disabled={domainActionLoading === 'create'}>
+                    {domainActionLoading === 'create' ? 'Сактоо...' : 'Сактоо'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

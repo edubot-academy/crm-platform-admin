@@ -21,8 +21,7 @@ export function PlatformFeatureFlagsPage() {
       const data = await platformFeatureFlagsApi.getFeatureFlags();
       setFlags(data);
     } catch (err: any) {
-      setError('Маалыматты алуу мүмкүн болгон жок');
-      console.error('Failed to load feature flags:', err);
+      setError('Функцияларды жүктөө мүмкүн болгон жок');
     } finally {
       setLoading(false);
     }
@@ -35,7 +34,7 @@ export function PlatformFeatureFlagsPage() {
       toast.success('Функция ийгиликтүү жаңыртылды');
       loadFlags();
     } catch (err: any) {
-      console.error('Failed to update feature flag:', err);
+      setError(err.response?.data?.message || 'Функцияны жаңыртууда ката кетти');
       toast.error(err.response?.data?.message || 'Функцияны жаңыртууда ката кетти');
     } finally {
       setUpdating(null);

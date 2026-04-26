@@ -41,6 +41,26 @@ Platform Admin dashboard for Edubot CRM SaaS platform. This application is exclu
 - **Audit Logs**:
   - View platform audit logs with pagination
   - Filter by action, actor, target type, and date range
+- **Tenant Domains Management**:
+  - List tenant domains with status badges
+  - Create new domain with type selection (default/custom)
+  - Set domain as primary
+  - Update domain status (active, pending, failed, disabled)
+  - Modal for domain creation
+  - Loading, error, and empty states
+- **Tenant Users Overview**:
+  - List tenant users with pagination
+  - View user details (name, email, role, status, last login, created date)
+  - Update user status (active/inactive) with confirmation dialog
+  - Role badges (Admin, Manager, Sales, Assistant)
+  - Status badges (Active/Inactive)
+  - Loading, error, and empty states
+- **Tenant Settings**:
+  - Platform-level tenant configuration
+  - Editable fields: default language, timezone, currency, support email, platform notes
+  - Read-only enabled modules summary
+  - Form with loading, error, and empty states
+  - Kyrgyz UI labels throughout
 - **Settings**: Platform configuration interface
 - **Authentication**:
   - Login page with superadmin role validation
@@ -123,6 +143,14 @@ Platform Admin dashboard for Edubot CRM SaaS platform. This application is exclu
 - `PATCH /api/platform/plans/:id/status` - Update plan status
 - `PATCH /api/platform/tenants/:tenantId/plan` - Assign plan to tenant
 - `GET /api/platform/audit-logs` - List audit logs
+- `GET /api/platform/tenants/:tenantId/domains` - List tenant domains
+- `POST /api/platform/tenants/:tenantId/domains` - Create tenant domain
+- `PATCH /api/platform/tenants/:tenantId/domains/:domainId/primary` - Set domain as primary
+- `PATCH /api/platform/tenants/:tenantId/domains/:domainId/status` - Update domain status
+- `GET /api/platform/tenants/:tenantId/users` - List tenant users with pagination
+- `PATCH /api/platform/tenants/:tenantId/users/:userId/status` - Update user status
+- `GET /api/platform/tenants/:tenantId/settings` - Get tenant platform settings
+- `PATCH /api/platform/tenants/:tenantId/settings` - Update tenant platform settings
 
 ### Localization
 - All user-facing UI text in Kyrgyz language

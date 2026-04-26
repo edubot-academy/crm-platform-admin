@@ -39,14 +39,6 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Log requests in development mode
-    if (import.meta.env.DEV) {
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
-        headers: config.headers,
-        data: config.data,
-      });
-    }
-
     return config;
   },
   (error) => {
@@ -60,13 +52,6 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
   (response) => {
-    // Log responses in development mode
-    if (import.meta.env.DEV) {
-      console.log(`[API Response] ${response.config.url}`, {
-        status: response.status,
-        data: response.data,
-      });
-    }
     return response;
   },
   async (error) => {

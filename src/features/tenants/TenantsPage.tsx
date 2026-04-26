@@ -45,7 +45,6 @@ export function TenantsPage() {
       });
     } catch (err: any) {
       setError('Тенанттарды жүктөөдө ката кетти');
-      console.error('Failed to load tenants:', err);
     } finally {
       setLoading(false);
     }

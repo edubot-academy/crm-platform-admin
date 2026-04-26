@@ -21,7 +21,7 @@ export function LoginPage() {
       const response = await authService.login({ email, password });
 
       // Check if user is superadmin and has no company/tenant
-      if (response.user.role !== 'superadmin' || response.user.companyId) {
+      if (!response.user || response.user.role !== 'superadmin' || response.user.companyId) {
         authService.logout();
         setError('Бул платформа админ панелине кирүүгө уруксатыңыз жок');
         return;
