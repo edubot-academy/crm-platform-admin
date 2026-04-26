@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-27
+
+### Added
+
+#### Design System Implementation (Phase 1 & 2)
+- **Design Tokens**:
+  - Comprehensive color palette (primary, secondary, semantic colors for success, warning, error, info)
+  - Typography scale (xs to 5xl with line heights)
+  - Custom spacing scale (18, 88, 128)
+  - Border radius tokens (sm, md, lg, xl, 2xl, 3xl)
+  - Shadow depth system (sm, md, lg, xl, 2xl, inner)
+  - Custom animations (shimmer, spin-slow)
+- **Loading & Empty State Components**:
+  - `SkeletonCard` - Card loading placeholder with shimmer animation
+  - `SkeletonTable` - Table loading placeholder with configurable rows/columns
+  - `LoadingSpinner` - SVG-based spinner with size variants (sm, md, lg)
+  - `EmptyState` - Empty state component with icon, title, description, and action button
+- **Enhanced Shared Components**:
+  - `Button`:
+    - Added `loading` prop with integrated LoadingSpinner
+    - Added `leftIcon` and `rightIcon` props for icon support
+    - Added `iconOnly` prop for icon-only buttons
+    - Improved disabled state visual feedback
+    - Updated to use design token colors
+    - Added shadow effects on hover
+  - `Input`:
+    - Added `floating` prop for floating label variant with animation
+    - Added `helperText` prop for additional context below input
+    - Added `showCharCount` and `maxLength` props for character counter
+    - Updated to use design token colors
+  - `Card`:
+    - Added `elevation` prop (none, sm, md, lg, xl) for shadow control
+    - Added `hoverable` prop with lift effect on hover
+  - `Table`:
+    - Added `stickyHeader` prop for sticky table headers
+    - Added `selectable` prop for checkbox row selection
+    - Added `onSelectionChange` callback for selection handling
+    - Added `sortable` column property with visual indicators
+    - Added `emptyMessage` prop for customizable empty state
+    - Implemented column sorting (asc/desc/null cycle)
+    - Implemented select-all functionality
+    - Updated to use design token colors for selected states
+- **New Components**:
+  - `Select` - Custom select dropdown component to replace native select elements
+    - Searchable dropdown with keyboard navigation
+    - Disabled option support
+    - Error and helper text support
+    - Click-outside-to-close behavior
+  - `JsonEditor` - JSON editor component with validation and formatting
+    - Real-time JSON validation with visual feedback
+    - Format button for pretty-printing JSON
+    - Character counter and error display
+    - Monospace font for code readability
+- **Feature Page Updates**:
+  - Replaced all hardcoded "Жүктөлүүдө..." (Loading...) text with SkeletonTable/SkeletonCard components
+  - Replaced all hardcoded "Маалымат жок" (No data) text with EmptyState components
+  - Updated pages: TenantsPage, PlatformUsersPage, PlansPage, PlatformFeatureFlagsPage, DemoRequestsPage, AuditLogsPage, TenantDetailPage
+
+#### Documentation
+- Added `DESIGN_TASKS.md` - Comprehensive design implementation task tracking document
+  - 75 tasks organized into 5 phases
+  - Progress tracking with completion percentages
+  - Phase 1 (Foundation): 100% complete
+  - Phase 2 (Components): 100% complete
+
+### Changed
+- Updated `tailwind.config.js` with comprehensive design token system
+- All shared components now use design token colors instead of hardcoded values
+- Improved loading and empty state UX across all feature pages
+- Enhanced component accessibility with proper ARIA labels
+
 ## [0.1.1] - 2026-04-27
 
 ### Added

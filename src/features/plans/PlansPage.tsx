@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
 import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
-import { Plus, Edit, Power, PowerOff, Archive } from 'lucide-react';
+import { SkeletonCard } from '../../shared/components/SkeletonCard';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { Plus, Edit, Power, PowerOff, Archive, CreditCard } from 'lucide-react';
 import { plansApi, type Plan, type CreatePlanData, type PlanStatus } from './plansApi';
 
 export function PlansPage() {
@@ -382,11 +384,21 @@ export function PlansPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+            <div className="space-y-4">
+              <SkeletonCard showHeader lines={4} />
+              <SkeletonCard showHeader lines={4} />
+              <SkeletonCard showHeader lines={4} />
+            </div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">{error}</div>
           ) : plans.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Тарифтер табылган жок</div>
+            <EmptyState
+              icon={CreditCard}
+              title="Тарифтер табылган жок"
+              description="Тариф пландары жок. Жаңы тариф түзүңүз."
+              actionText="Жаңы тариф кошуу"
+              onAction={() => setShowCreateForm(true)}
+            />
           ) : (
             <div className="space-y-4">
               {plans.map((plan) => (

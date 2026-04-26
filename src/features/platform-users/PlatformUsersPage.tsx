@@ -6,7 +6,9 @@ import { Input } from '../../shared/components/Input';
 import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
-import { Plus, Power, PowerOff } from 'lucide-react';
+import { SkeletonTable } from '../../shared/components/SkeletonTable';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { Plus, Power, PowerOff, Users } from 'lucide-react';
 import { platformUsersApi, type PlatformUser, type CreatePlatformUserData } from './platformUsersApi';
 
 export function PlatformUsersPage() {
@@ -227,11 +229,17 @@ export function PlatformUsersPage() {
       <Card>
         <CardContent className="p-6">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+            <SkeletonTable rows={5} columns={6} />
           ) : error ? (
             <div className="text-center py-8 text-red-500">{error}</div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Платформа колдонуучулары табылган жок</div>
+            <EmptyState
+              icon={Users}
+              title="Платформа колдонуучулары табылган жок"
+              description="Платформада колдонуучулар жок. Жаңы суперадмин түзүңүз."
+              actionText="Жаңы колдонуучу"
+              onAction={() => setShowCreateForm(true)}
+            />
           ) : (
             <Table columns={columns} data={users} />
           )}

@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
 import { Badge } from '../../shared/components/Badge';
+import { SkeletonTable } from '../../shared/components/SkeletonTable';
+import { EmptyState } from '../../shared/components/EmptyState';
 import { auditLogsApi, type PlatformAuditLog, type AuditLogsQueryParams } from './auditLogsApi';
+import { FileText } from 'lucide-react';
 
 export function AuditLogsPage() {
   const [logs, setLogs] = useState<PlatformAuditLog[]>([]);
@@ -159,11 +162,15 @@ export function AuditLogsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+            <SkeletonTable rows={5} columns={6} />
           ) : error ? (
             <div className="text-center py-8 text-red-500">{error}</div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Маалымат табылган жок</div>
+            <EmptyState
+              icon={FileText}
+              title="Маалымат табылган жок"
+              description="Аудит жаздырылышы жок. Фильтрлерди өзгөртүп көрүңүз."
+            />
           ) : (
             <>
               <div className="mb-4 text-sm text-gray-500">

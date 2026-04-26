@@ -1,13 +1,21 @@
-import React from 'react';
-
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  elevation?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  hoverable?: boolean;
 }
 
-export function Card({ children, className = '' }: CardProps) {
+export function Card({ children, className = '', elevation = 'sm', hoverable = false }: CardProps) {
+  const elevationStyles = {
+    none: 'shadow-none',
+    sm: 'shadow-sm',
+    md: 'shadow-md',
+    lg: 'shadow-lg',
+    xl: 'shadow-xl',
+  };
+
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className={`bg-white rounded-lg border border-gray-200 ${elevationStyles[elevation]} ${hoverable ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200' : ''} ${className}`}>
       {children}
     </div>
   );

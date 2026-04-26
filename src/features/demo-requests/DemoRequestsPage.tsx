@@ -5,7 +5,9 @@ import { Card, CardContent } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
 import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
-import { Search } from 'lucide-react';
+import { SkeletonTable } from '../../shared/components/SkeletonTable';
+import { EmptyState } from '../../shared/components/EmptyState';
+import { Search, MessageSquare } from 'lucide-react';
 import { demoRequestsApi, type DemoRequest, type DemoRequestStatus } from './demoRequestsApi';
 
 const STATUS_OPTIONS: { value: DemoRequestStatus | ''; label: string }[] = [
@@ -186,11 +188,15 @@ export function DemoRequestsPage() {
       <Card>
         <CardContent className="p-6">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+            <SkeletonTable rows={5} columns={6} />
           ) : error ? (
             <div className="text-center py-8 text-red-500">{error}</div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Демо сурамдары табылган жок</div>
+            <EmptyState
+              icon={MessageSquare}
+              title="Демо сурамдары табылган жок"
+              description="Демо сурамдары жок. Фильтрлерди өзгөртүп көрүңүз."
+            />
           ) : (
             <>
               <Table columns={columns} data={requests} />

@@ -12,6 +12,8 @@ import { tenantDomainsApi, type TenantDomain, type CreateTenantDomainDto } from 
 import { tenantUsersApi, type TenantUserSummary, type GetTenantUsersParams } from './tenantUsersApi';
 import { tenantSettingsApi, type TenantConfig, type UpdateTenantConfigDto } from './tenantSettingsApi';
 import { plansApi, type Plan } from '../plans/plansApi';
+import { SkeletonCard } from '../../shared/components/SkeletonCard';
+import { EmptyState } from '../../shared/components/EmptyState';
 
 export function TenantDetailPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
@@ -865,7 +867,7 @@ export function TenantDetailPage() {
             </CardHeader>
             <CardContent>
               {settingsLoading ? (
-                <div className="text-center py-8 text-gray-500">Жүктөлүүдө...</div>
+                <SkeletonCard showHeader lines={4} />
               ) : settings ? (
                 <form onSubmit={handleSettingsSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -934,7 +936,7 @@ export function TenantDetailPage() {
                   </div>
                 </form>
               ) : (
-                <div className="text-center py-8 text-gray-500">Жөндөөлөр табылган жок</div>
+                <EmptyState icon={Settings} title="Жөндөөлөр табылган жок" description="Жөндөөлөр жок." />
               )}
             </CardContent>
           </Card>
