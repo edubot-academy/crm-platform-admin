@@ -63,9 +63,10 @@ export function JsonEditor({
             type="button"
             onClick={formatJson}
             className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
+            aria-label="JSON форматтоо"
           >
             <Code className="w-3 h-3" />
-            Format
+            Форматтоо
           </button>
         </div>
       )}
@@ -74,9 +75,8 @@ export function JsonEditor({
           value={formattedValue}
           onChange={handleChange}
           placeholder={placeholder}
-          className={`w-full px-3 py-2 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-y min-h-[120px] ${
-            error || !isValid ? 'border-semantic-error-500 focus:ring-semantic-error-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-3 py-2 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-y min-h-[120px] ${error || !isValid ? 'border-semantic-error-500 focus:ring-semantic-error-500' : 'border-gray-300'
+            }`}
         />
         <div className="absolute top-2 right-2">
           {formattedValue && (

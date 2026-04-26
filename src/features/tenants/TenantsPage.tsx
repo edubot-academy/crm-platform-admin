@@ -113,6 +113,7 @@ export function TenantsPage() {
           <button
             onClick={() => setActionDropdownOpen(actionDropdownOpen === row.id ? null : row.id)}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Көбүрөөк аракеттер"
           >
             <MoreVertical className="w-4 h-4 text-gray-600" />
           </button>
@@ -165,6 +166,7 @@ export function TenantsPage() {
               className={`rounded-r-none ${viewMode === 'table' ? 'bg-gray-100' : ''}`}
               leftIcon={List}
               iconOnly
+              aria-label="Таблица көрүнүшү"
             >
               <List className="w-4 h-4" />
             </Button>
@@ -175,6 +177,7 @@ export function TenantsPage() {
               className={`rounded-l-none ${viewMode === 'card' ? 'bg-gray-100' : ''}`}
               leftIcon={LayoutGrid}
               iconOnly
+              aria-label="Карточка көрүнүшү"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>

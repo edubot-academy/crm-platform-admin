@@ -611,6 +611,7 @@ export function PlansPage() {
                           size="sm"
                           onClick={() => handleEdit(plan)}
                           title="Оңдоо"
+                          aria-label="Тарифти оңдоо"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -621,6 +622,7 @@ export function PlansPage() {
                             onClick={() => handleStatusChange(plan.id, 'inactive')}
                             disabled={statusLoading === plan.id}
                             title="Өчүрүү"
+                            aria-label="Тарифти өчүрүү"
                           >
                             <PowerOff className="w-4 h-4" />
                           </Button>
@@ -632,6 +634,7 @@ export function PlansPage() {
                               onClick={() => handleStatusChange(plan.id, 'active')}
                               disabled={statusLoading === plan.id}
                               title="Активдештирүү"
+                              aria-label="Тарифти активдештирүү"
                             >
                               <Power className="w-4 h-4" />
                             </Button>
@@ -641,6 +644,7 @@ export function PlansPage() {
                               onClick={() => handleArchive(plan)}
                               disabled={statusLoading === plan.id}
                               title="Архивдөө"
+                              aria-label="Тарифти архивдөө"
                             >
                               <Archive className="w-4 h-4" />
                             </Button>

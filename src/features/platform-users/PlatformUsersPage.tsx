@@ -142,6 +142,7 @@ export function PlatformUsersPage() {
               size="sm"
               onClick={() => handleStatusChange(row.id, true)}
               title="Активдештирүү"
+              aria-label="Колдонуучуну активдештирүү"
             >
               <Power className="w-4 h-4" />
             </Button>
@@ -151,6 +152,7 @@ export function PlatformUsersPage() {
               size="sm"
               onClick={() => handleStatusChange(row.id, false)}
               title="Өчүрүү"
+              aria-label="Колдонуучуну өчүрүү"
             >
               <PowerOff className="w-4 h-4" />
             </Button>

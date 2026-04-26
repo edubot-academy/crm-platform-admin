@@ -147,6 +147,7 @@ export function PlatformLayout() {
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Жабуу"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -262,6 +263,7 @@ export function PlatformLayout() {
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label={sidebarOpen ? 'Жабуу' : 'Меню'}
               >
                 <svg
                   className="w-5 h-5 text-gray-600"
@@ -270,19 +272,9 @@ export function PlatformLayout() {
                   viewBox="0 0 24 24"
                 >
                   {sidebarOpen ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   )}
                 </svg>
               </button>
@@ -315,12 +307,12 @@ export function PlatformLayout() {
                   key={index}
                   onClick={action.onClick}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${action.variant === 'primary'
-                      ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : action.variant === 'danger'
-                        ? 'bg-semantic-error-600 text-white hover:bg-semantic-error-700'
-                        : action.variant === 'secondary'
-                          ? 'bg-secondary-200 text-secondary-900 hover:bg-secondary-300'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : action.variant === 'danger'
+                      ? 'bg-semantic-error-600 text-white hover:bg-semantic-error-700'
+                      : action.variant === 'secondary'
+                        ? 'bg-secondary-200 text-secondary-900 hover:bg-secondary-300'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   {action.icon && <action.icon className="w-4 h-4" />}
@@ -332,6 +324,7 @@ export function PlatformLayout() {
               <button
                 onClick={() => setGlobalSearchOpen(true)}
                 className="hidden md:flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                aria-label="Глобалдык издөө"
               >
                 <Search className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-500">Издөө...</span>
@@ -341,7 +334,7 @@ export function PlatformLayout() {
               </button>
 
               {/* Notification Bell */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Билдирүүлөр">
                 <Bell className="w-5 h-5 text-gray-600" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-semantic-error-500 rounded-full"></span>
               </button>
@@ -351,6 +344,8 @@ export function PlatformLayout() {
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Колдонуучу менюсу"
+                  aria-expanded={userDropdownOpen}
                 >
                   <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
                     {currentUser?.name.charAt(0).toUpperCase() || 'A'}

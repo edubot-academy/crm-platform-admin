@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-27
+
+### Added
+
+#### UX/UI Design Audit - Phase 5 (Polish)
+
+**Accessibility Improvements**:
+- Added aria-labels to all icon-only buttons throughout the application
+- Implemented focus trapping in ConfirmDialog modal with Escape key support
+- Added comprehensive keyboard navigation to Select component (arrow keys, Enter, Escape, Home, End)
+- Added ARIA roles and attributes to Table component (role="table", aria-sort, aria-selected, etc.)
+- Added icons to Badge component for colorblind accessibility (Check, AlertTriangle, X, Info, Minus)
+- Added role="switch" and aria-checked to feature flag toggle switches
+- Added role="tab" and aria-selected to tab navigation buttons
+- Added aria-expanded to dropdown buttons for better screen reader support
+- Added aria-live="polite" to empty state messages for dynamic content announcements
+
+**Error Handling**:
+- Created ErrorBoundary component with user-friendly error display and recovery options
+- Wrapped entire application with ErrorBoundary for global error catching
+- ErrorBoundary provides error details and retry functionality
+
+**Performance Optimizations**:
+- Implemented lazy loading for all route components using React.lazy
+- Added Suspense boundaries with loading spinners for all lazy-loaded routes
+- Improved initial application load time by code-splitting page components
+
+**Animation Utilities**:
+- Added fade-in, fade-out animations for smooth transitions
+- Added slide-in, slide-out animations for content appearing/disappearing
+- Added scale-in, scale-out animations for modal and card interactions
+- Added bounce-short animation for interactive feedback
+- Enhanced Tailwind config with comprehensive animation keyframes
+
+### Changed
+- Updated Button component with focus ring styles for better keyboard navigation visibility
+- Updated Input component with focus ring styles
+- Updated Select component with focus ring styles and ARIA attributes
+- Updated ConfirmDialog with focus trapping and keyboard navigation
+- Updated Table component with proper ARIA roles and live regions
+- Updated Badge component with optional icon display for accessibility
+- Updated router.tsx to use lazy loading for all routes
+
+### Fixed
+- Fixed TypeScript import errors in ErrorBoundary (type-only imports)
+- Fixed TypeScript errors in Select component keyboard navigation
+- Fixed TypeScript errors in ConfirmDialog useEffect hook
+- Fixed button text visibility issue by using arbitrary Tailwind color values with explicit hex codes
+- Fixed loading spinner visibility in primary and danger button variants
+
 ## [0.3.0] - 2026-04-27
 
 ### Added

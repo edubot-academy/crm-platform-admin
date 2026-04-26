@@ -26,10 +26,10 @@ export function Button({
   const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50';
 
   const variantStyles = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md',
-    secondary: 'bg-secondary-200 text-secondary-900 hover:bg-secondary-300 focus:ring-secondary-500',
-    danger: 'bg-semantic-error-600 text-white hover:bg-semantic-error-700 focus:ring-semantic-error-500 shadow-sm hover:shadow-md',
-    ghost: 'bg-transparent text-secondary-700 hover:bg-secondary-100 focus:ring-secondary-500',
+    primary: 'bg-[#2563eb] text-white hover:bg-[#1d4ed8] focus:ring-[#2563eb] shadow-sm hover:shadow-md',
+    secondary: 'bg-[#e5e7eb] text-[#000000] hover:bg-[#d1d5db] focus:ring-[#6b7280]',
+    danger: 'bg-[#dc2626] text-white hover:bg-[#b91c1c] focus:ring-[#dc2626] shadow-sm hover:shadow-md',
+    ghost: 'bg-transparent text-[#000000] hover:bg-[#f3f4f6] focus:ring-[#6b7280]',
   };
 
   const sizeStyles = {
@@ -46,6 +46,8 @@ export function Button({
 
   const isDisabled = disabled || loading;
 
+  const spinnerColor = variant === 'primary' || variant === 'danger' ? 'white' : 'currentColor';
+
   return (
     <button
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
@@ -53,7 +55,7 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <LoadingSpinner size={size === 'lg' ? 'md' : 'sm'} />
+        <LoadingSpinner size={size === 'lg' ? 'md' : 'sm'} color={spinnerColor} />
       ) : (
         <>
           {LeftIcon && !iconOnly && <LeftIcon className={`${iconSize[size]} mr-2`} />}

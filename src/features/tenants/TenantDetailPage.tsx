@@ -433,6 +433,9 @@ export function TenantDetailPage() {
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
+                aria-label={tab.label}
+                role="tab"
+                aria-selected={activeTab === tab.id}
               >
                 <Icon className="w-4 h-4 mr-2" />
                 {tab.label}

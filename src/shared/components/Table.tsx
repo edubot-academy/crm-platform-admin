@@ -107,16 +107,18 @@ export function Table({
   const someSelected = selectedRows.size > 0 && !allSelected;
 
   return (
-    <div className={`${responsive ? 'overflow-x-auto' : ''} ${className}`}>
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className={`${responsive ? 'overflow-x-auto' : ''} ${className}`} role="region" aria-label="Таблица" tabIndex={0}>
+      <table className="min-w-full divide-y divide-gray-200" role="table">
         <thead className={`bg-gray-50 ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
           <tr>
             {selectable && (
-              <th className="px-6 py-3 text-left">
+              <th className="px-6 py-3 text-left" scope="col">
                 <button
                   onClick={handleSelectAll}
                   className="p-1 rounded hover:bg-gray-200 transition-colors"
                   aria-label="Select all"
+                  aria-checked={allSelected}
+                  role="checkbox"
                 >
                   {allSelected ? (
                     <Check className="w-4 h-4 text-primary-600" />
@@ -131,14 +133,16 @@ export function Table({
             {columns.map((column) => (
               <th
                 key={column.key}
+                scope="col"
                 className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.sortable ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''
                   }`}
                 onClick={() => column.sortable && handleSort(column.key)}
+                aria-sort={sortColumn === column.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
                 <div className="flex items-center gap-2">
                   {column.header}
                   {column.sortable && (
-                    <span className="text-gray-400">
+                    <span className="text-gray-400" aria-hidden="true">
                       {sortColumn === column.key ? (
                         sortDirection === 'asc' ? (
                           <ChevronUp className="w-4 h-4" />
@@ -155,19 +159,23 @@ export function Table({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white divide-y divide-gray-200" role="rowgroup">
           {sortedData.map((row, rowIndex) => (
             <tr
               key={rowIndex}
               className={`hover:bg-gray-50 transition-colors ${selectedRows.has(rowIndex) ? 'bg-primary-50' : ''
                 }`}
+              role="row"
+              aria-selected={selectedRows.has(rowIndex)}
             >
               {selectable && (
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap" role="cell">
                   <button
                     onClick={() => handleRowSelect(rowIndex)}
                     className="p-1 rounded hover:bg-gray-200 transition-colors"
                     aria-label={`Select row ${rowIndex + 1}`}
+                    aria-checked={selectedRows.has(rowIndex)}
+                    role="checkbox"
                   >
                     {selectedRows.has(rowIndex) ? (
                       <Check className="w-4 h-4 text-primary-600" />
@@ -181,6 +189,7 @@ export function Table({
                 <td
                   key={column.key}
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  role="cell"
                 >
                   {column.render ? column.render(row[column.key], row) : row[column.key]}
                 </td>
@@ -190,7 +199,7 @@ export function Table({
         </tbody>
       </table>
       {sortedData.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500" role="status" aria-live="polite">
           {emptyMessage}
         </div>
       )}

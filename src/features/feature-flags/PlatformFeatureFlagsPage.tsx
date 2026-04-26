@@ -222,6 +222,7 @@ export function PlatformFeatureFlagsPage() {
                                 <button
                                   onClick={() => toggleDescription(flag.key)}
                                   className="flex items-center text-xs text-primary-600 hover:text-primary-700 mt-1"
+                                  aria-label={expandedDescriptions.has(flag.key) ? 'Сүрөттөмөнү жашыруу' : 'Сүрөттөмөнү көрсөтүү'}
                                 >
                                   {expandedDescriptions.has(flag.key) ? (
                                     <>
@@ -245,7 +246,9 @@ export function PlatformFeatureFlagsPage() {
                                   ? 'opacity-50 cursor-not-allowed'
                                   : 'cursor-pointer hover:opacity-90'
                                 }`}
-                              title={FLAG_DISPLAY_INFO[flag.key]?.isCore ? 'Негизги модул өчүрүлбөйт' : ''}
+                              aria-label={flag.enabled ? `${flag.name} өчүрүү` : `${flag.name} кошуу`}
+                              aria-checked={flag.enabled}
+                              role="switch"
                             >
                               <span
                                 className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${flag.enabled ? 'translate-x-6' : 'translate-x-1'
