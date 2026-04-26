@@ -16,6 +16,7 @@ interface TableProps {
   selectable?: boolean;
   onSelectionChange?: (selectedRows: any[]) => void;
   emptyMessage?: string;
+  responsive?: boolean;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -27,7 +28,8 @@ export function Table({
   stickyHeader = false,
   selectable = false,
   onSelectionChange,
-  emptyMessage = 'Маалымат жок'
+  emptyMessage = 'Маалымат жок',
+  responsive = true
 }: TableProps) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -105,7 +107,7 @@ export function Table({
   const someSelected = selectedRows.size > 0 && !allSelected;
 
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className={`${responsive ? 'overflow-x-auto' : ''} ${className}`}>
       <table className="min-w-full divide-y divide-gray-200">
         <thead className={`bg-gray-50 ${stickyHeader ? 'sticky top-0 z-10' : ''}`}>
           <tr>

@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { Input } from '../../shared/components/Input';
 import { platformFeatureFlagsApi, type FeatureFlag } from './platformFeatureFlagsApi';
-import { Flag } from 'lucide-react';
+import { Flag, Search, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Feature flag display labels and descriptions for platform-wide availability
 const FLAG_DISPLAY_INFO: Record<string, { label: string; description: string; isCore?: boolean }> = {
@@ -57,6 +58,9 @@ export function PlatformFeatureFlagsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadFlags();
@@ -99,6 +103,30 @@ export function PlatformFeatureFlagsPage() {
     return acc;
   }, {} as Record<string, FeatureFlag[]>);
 
+  // Filter flags based on search and category
+  const filteredFlags = flags.filter(flag => {
+    const matchesSearch = searchQuery === '' ||
+      FLAG_DISPLAY_INFO[flag.key]?.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flag.key.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === '' || flag.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Get unique categories
+  const categories = Array.from(new Set(flags.map(f => f.category || 'Глобалдык жөндөөлөр')));
+
+  const toggleDescription = (key: string) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Платформа мүмкүнчүлүктөрү</h1>
@@ -122,6 +150,29 @@ export function PlatformFeatureFlagsPage() {
           </p>
         </CardHeader>
         <CardContent>
+          {/* Search and Filter */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Издөө..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Бардык категориялар</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
           {loading ? (
             <SkeletonTable rows={5} columns={2} />
           ) : error ? (
@@ -134,50 +185,85 @@ export function PlatformFeatureFlagsPage() {
             />
           ) : (
             <div className="space-y-6">
-              {Object.entries(groupedFlags).map(([category, categoryFlags]) => (
-                <div key={category}>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">{category}</h3>
-                  <div className="space-y-3">
-                    {categoryFlags.map((flag) => (
-                      <div
-                        key={flag.key}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <h3 className="font-medium text-gray-900">
-                              {FLAG_DISPLAY_INFO[flag.key]?.label || flag.name}
-                              {FLAG_DISPLAY_INFO[flag.key]?.isCore && (
-                                <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                                  Негизги модуль
-                                </span>
-                              )}
-                            </h3>
-                            <Badge variant={flag.enabled ? 'success' : 'neutral'}>
-                              {flag.enabled ? 'Платформада жеткиликтүү' : 'Платформада өчүрүлгөн'}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {FLAG_DISPLAY_INFO[flag.key]?.description || flag.description || flag.key}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleToggle(flag.key, flag.enabled)}
-                          disabled={updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${flag.enabled ? 'bg-blue-600' : 'bg-gray-200'
-                            } ${updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title={FLAG_DISPLAY_INFO[flag.key]?.isCore ? 'Негизги модул өчүрүлбөйт' : ''}
+              {Object.entries(groupedFlags).map(([category, categoryFlags]) => {
+                const filteredCategoryFlags = categoryFlags.filter(flag =>
+                  filteredFlags.includes(flag)
+                );
+                if (filteredCategoryFlags.length === 0) return null;
+
+                return (
+                  <div key={category}>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">{category}</h3>
+                    <div className="space-y-3">
+                      {filteredCategoryFlags.map((flag) => (
+                        <div
+                          key={flag.key}
+                          className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                         >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${flag.enabled ? 'translate-x-6' : 'translate-x-1'
-                              }`}
-                          />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex-1 pr-4">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="font-medium text-gray-900">
+                                {FLAG_DISPLAY_INFO[flag.key]?.label || flag.name}
+                                {FLAG_DISPLAY_INFO[flag.key]?.isCore && (
+                                  <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                    Негизги модуль
+                                  </span>
+                                )}
+                              </h3>
+                              <Badge variant={flag.enabled ? 'success' : 'neutral'}>
+                                {flag.enabled ? 'Платформада жеткиликтүү' : 'Платформада өчүрүлгөн'}
+                              </Badge>
+                            </div>
+                            <div className="relative">
+                              <p className={`text-sm text-gray-500 ${expandedDescriptions.has(flag.key) ? '' : 'line-clamp-2'}`}>
+                                {FLAG_DISPLAY_INFO[flag.key]?.description || flag.description || flag.key}
+                              </p>
+                              {((FLAG_DISPLAY_INFO[flag.key]?.description || flag.description)?.length || 0) > 100 && (
+                                <button
+                                  onClick={() => toggleDescription(flag.key)}
+                                  className="flex items-center text-xs text-primary-600 hover:text-primary-700 mt-1"
+                                >
+                                  {expandedDescriptions.has(flag.key) ? (
+                                    <>
+                                      Жашыруу <ChevronUp className="w-3 h-3 ml-1" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      Көбүрөөк <ChevronDown className="w-3 h-3 ml-1" />
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <button
+                              onClick={() => handleToggle(flag.key, flag.enabled)}
+                              disabled={updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out ${flag.enabled ? 'bg-primary-600' : 'bg-gray-300'
+                                } ${updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : 'cursor-pointer hover:opacity-90'
+                                }`}
+                              title={FLAG_DISPLAY_INFO[flag.key]?.isCore ? 'Негизги модул өчүрүлбөйт' : ''}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${flag.enabled ? 'translate-x-6' : 'translate-x-1'
+                                  }`}
+                              />
+                            </button>
+                            {FLAG_DISPLAY_INFO[flag.key]?.isCore && (
+                              <div className="flex items-center text-xs text-gray-500" title="Бул негизги модул">
+                                <Info className="w-3 h-3 mr-1" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

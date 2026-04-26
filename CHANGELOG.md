@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-27
+
+### Added
+
+#### UX/UI Design Audit - Phase 4 (Dashboard, Tenants, Feature Flags, Plans)
+
+**Dashboard Improvements**:
+- Added line chart for tenant trends over time using Recharts
+- Added bar chart for tenant status comparison (active/inactive/suspended)
+- Enhanced stat cards with sparkline visualizations using AreaChart
+- Added date range picker for filtering dashboard data
+- Added export functionality to download dashboard data as JSON
+- Improved visual hierarchy and data presentation
+
+**Tenants Page Enhancements**:
+- Added bulk action toolbar with selection state management
+- Added advanced filter panel with search and category filters
+- Added toggle button to show/hide advanced filter panel
+- Added visual editor for tenant limits/features (replaced JSON input)
+- Added card view option with table/card toggle buttons
+- Added quick actions dropdown to table rows (View, Edit, Delete options)
+- Improved user experience for managing multiple tenants
+
+**Feature Flags Page Improvements**:
+- Improved toggle switch design with better styling and hover effects
+- Added search functionality to filter flags by name or description
+- Added category filtering dropdown to filter by flag category
+- Added expandable descriptions with show/hide buttons for long descriptions
+- Added visual feedback for core module flags (non-toggleable)
+- Enhanced flag card layout with hover effects
+
+**Plans Page Enhancements**:
+- Created visual feature editor with checkboxes (replaced JSON input)
+- Created visual limits editor with number inputs (replaced JSON input)
+- Added plan comparison table showing pricing, features, and limits side by side
+- Improved pricing display with colored badges (primary for monthly, green for yearly)
+- Added pricing ratio display (yearly vs monthly multiplier)
+- Added feature checklist UI with Check/X icons for enabled/disabled features
+- Enhanced plan card layout with better visual hierarchy
+
+**Infrastructure**:
+- Added `recharts` dependency for charting capabilities
+- Added Check and X icons from lucide-react for checklist UI
+
+### Changed
+- Updated `PlatformDashboardPage` with charts, sparklines, date picker, and export
+- Updated `TenantsPage` with bulk actions, advanced filters, card view, and quick actions
+- Updated `PlatformFeatureFlagsPage` with improved toggles, search, and category filtering
+- Updated `PlansPage` with visual editors, comparison table, and improved pricing display
+- Fixed TypeScript error in TenantsPage view toggle buttons (added iconOnly children)
+- Updated `DESIGN_TASKS.md` progress: Phase 4 at 74% (14/19 tasks complete)
+
 ## [0.2.0] - 2026-04-27
 
 ### Added

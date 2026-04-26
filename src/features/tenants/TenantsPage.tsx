@@ -7,7 +7,7 @@ import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { Plus, Search, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Users, Trash2, ChevronDown, Filter, LayoutGrid, List, MoreVertical, Edit, Eye } from 'lucide-react';
 import { tenantApi, type TenantSummary, type GetTenantsParams } from './tenantApi';
 
 export function TenantsPage() {
@@ -16,6 +16,15 @@ export function TenantsPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedTenants, setSelectedTenants] = useState<TenantSummary[]>([]);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [actionDropdownOpen, setActionDropdownOpen] = useState<number | null>(null);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    planId: '',
+    createdAtFrom: '',
+    createdAtTo: '',
+  });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -62,6 +71,17 @@ export function TenantsPage() {
     setPagination({ ...pagination, page: newPage });
   };
 
+  const handleSelectionChange = (selected: TenantSummary[]) => {
+    setSelectedTenants(selected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTenants.length === 0) return;
+    // TODO: Implement bulk delete API call
+    console.log('Deleting tenants:', selectedTenants.map(t => t.id));
+    setSelectedTenants([]);
+  };
+
   const columns = [
     { key: 'name', header: 'Компания' },
     { key: 'slug', header: 'Слаг' },
@@ -89,11 +109,45 @@ export function TenantsPage() {
       key: 'actions',
       header: 'Аракеттер',
       render: (_: any, row: TenantSummary) => (
-        <Link to={`/platform/tenants/${row.id}`}>
-          <Button variant="ghost" size="sm">
-            Көрүү
-          </Button>
-        </Link>
+        <div className="relative">
+          <button
+            onClick={() => setActionDropdownOpen(actionDropdownOpen === row.id ? null : row.id)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="w-4 h-4 text-gray-600" />
+          </button>
+          {actionDropdownOpen === row.id && (
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+              <Link
+                to={`/platform/tenants/${row.id}`}
+                onClick={() => setActionDropdownOpen(null)}
+                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Көрүү
+              </Link>
+              <Link
+                to={`/platform/tenants/${row.id}/edit`}
+                onClick={() => setActionDropdownOpen(null)}
+                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Оңдоо
+              </Link>
+              <button
+                onClick={() => {
+                  // TODO: Implement delete
+                  console.log('Delete tenant:', row.id);
+                  setActionDropdownOpen(null);
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-semantic-error-600 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Өчүрүү
+              </button>
+            </div>
+          )}
+        </div>
       ),
     },
   ];
@@ -102,16 +156,68 @@ export function TenantsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Тенанттар</h1>
-        <Link to="/platform/tenants/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Жаңы тенант
-          </Button>
-        </Link>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center border border-gray-200 rounded-lg">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className={`rounded-r-none ${viewMode === 'table' ? 'bg-gray-100' : ''}`}
+              leftIcon={List}
+              iconOnly
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('card')}
+              className={`rounded-l-none ${viewMode === 'card' ? 'bg-gray-100' : ''}`}
+              leftIcon={LayoutGrid}
+              iconOnly
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+          </div>
+          <Link to="/platform/tenants/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Жаңы тенант
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
         <CardContent className="p-6">
+          {/* Bulk Action Toolbar */}
+          {selectedTenants.length > 0 && (
+            <div className="flex items-center justify-between bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-primary-900">
+                  {selectedTenants.length} тенант тандалды
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  leftIcon={Trash2}
+                >
+                  Өчүрүү
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTenants([])}
+                >
+                  Жокко чыгаруу
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Search and Filter */}
           <div className="flex gap-4 mb-6">
             <form onSubmit={handleSearch} className="flex-1">
@@ -136,7 +242,61 @@ export function TenantsPage() {
               <option value="suspended">Токтотулган</option>
               <option value="archived">Архивделген</option>
             </select>
+            <Button
+              variant="ghost"
+              onClick={() => setFilterPanelOpen(!filterPanelOpen)}
+              leftIcon={Filter}
+            >
+              Өркүнчөү
+              <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${filterPanelOpen ? 'rotate-180' : ''}`} />
+            </Button>
           </div>
+
+          {/* Advanced Filter Panel */}
+          {filterPanelOpen && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Тариф ID</label>
+                  <Input
+                    placeholder="Тариф ID..."
+                    value={advancedFilters.planId}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, planId: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Түзүлгөн күнү (башы)</label>
+                  <Input
+                    type="date"
+                    value={advancedFilters.createdAtFrom}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, createdAtFrom: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Түзүлгөн күнү (аягы)</label>
+                  <Input
+                    type="date"
+                    value={advancedFilters.createdAtTo}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, createdAtTo: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4 space-x-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setAdvancedFilters({ planId: '', createdAtFrom: '', createdAtTo: '' });
+                    setFilterPanelOpen(false);
+                  }}
+                >
+                  Тазалоо
+                </Button>
+                <Button onClick={() => setFilterPanelOpen(false)}>
+                  Колдонуу
+                </Button>
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <SkeletonTable rows={5} columns={7} />
@@ -152,37 +312,97 @@ export function TenantsPage() {
             />
           ) : (
             <>
-              <Table columns={columns} data={tenants} />
-
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-500">
-                    Жалпы: {pagination.total} тенант
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handlePageChange(pagination.page - 1)}
-                      disabled={pagination.page === 1}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <span className="text-sm text-gray-700">
-                      Бет {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handlePageChange(pagination.page + 1)}
-                      disabled={pagination.page === pagination.totalPages}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+              {viewMode === 'table' ? (
+                <Table
+                  columns={columns}
+                  data={tenants}
+                  selectable
+                  onSelectionChange={handleSelectionChange}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tenants.map((tenant) => (
+                    <Card key={tenant.id} hoverable>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{tenant.name}</h3>
+                            <p className="text-sm text-gray-500">{tenant.slug}</p>
+                          </div>
+                          <Badge
+                            variant={
+                              tenant.status === 'active'
+                                ? 'success'
+                                : tenant.status === 'suspended'
+                                  ? 'danger'
+                                  : tenant.status === 'archived'
+                                    ? 'neutral'
+                                    : 'warning'
+                            }
+                          >
+                            {tenant.status === 'active'
+                              ? 'Активдүү'
+                              : tenant.status === 'suspended'
+                                ? 'Токтотулган'
+                                : tenant.status === 'archived'
+                                  ? 'Архивделген'
+                                  : 'Актив эмес'}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Домен:</span>
+                            <span className="text-gray-900">{tenant.domain || 'Жок'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Тариф ID:</span>
+                            <span className="text-gray-900">{tenant.planId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Түзүлгөн:</span>
+                            <span className="text-gray-900">
+                              {new Date(tenant.createdAt).toLocaleDateString('ky-KG')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <Link to={`/platform/tenants/${tenant.id}`}>
+                            <Button variant="ghost" size="sm" className="w-full">
+                              Көрүү
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-gray-500">
+                  Жалпы: {pagination.total} тенант
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-gray-700">
+                    Бет {pagination.page} / {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </>
           )}
         </CardContent>

@@ -3,9 +3,10 @@ interface CardProps {
   className?: string;
   elevation?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   hoverable?: boolean;
+  fullWidth?: boolean;
 }
 
-export function Card({ children, className = '', elevation = 'sm', hoverable = false }: CardProps) {
+export function Card({ children, className = '', elevation = 'sm', hoverable = false, fullWidth = false }: CardProps) {
   const elevationStyles = {
     none: 'shadow-none',
     sm: 'shadow-sm',
@@ -15,7 +16,7 @@ export function Card({ children, className = '', elevation = 'sm', hoverable = f
   };
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 ${elevationStyles[elevation]} ${hoverable ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200' : ''} ${className}`}>
+    <div className={`bg-white rounded-lg border border-gray-200 ${elevationStyles[elevation]} ${hoverable ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200' : ''} ${fullWidth ? 'w-full' : ''} ${className}`}>
       {children}
     </div>
   );

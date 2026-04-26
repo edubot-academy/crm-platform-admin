@@ -7,7 +7,7 @@ import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { SkeletonCard } from '../../shared/components/SkeletonCard';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { Plus, Edit, Power, PowerOff, Archive, CreditCard } from 'lucide-react';
+import { Plus, Edit, Power, PowerOff, Archive, CreditCard, Check, X } from 'lucide-react';
 import { plansApi, type Plan, type CreatePlanData, type PlanStatus } from './plansApi';
 
 export function PlansPage() {
@@ -28,6 +28,30 @@ export function PlansPage() {
     features: {},
     status: 'active',
   });
+
+  // Available features for visual editor
+  const availableFeatures = [
+    { key: 'crm_enabled', label: 'CRM модулу' },
+    { key: 'payments_enabled', label: 'Төлөмдөр' },
+    { key: 'trial_lessons_enabled', label: 'Сыноо сабактар' },
+    { key: 'retention_enabled', label: 'Студентти кармап калуу' },
+    { key: 'telegram_notifications_enabled', label: 'Telegram билдирүүлөр' },
+    { key: 'whatsapp_integration_enabled', label: 'WhatsApp интеграциясы' },
+    { key: 'advanced_reports_enabled', label: 'Кеңейтилген отчеттор' },
+    { key: 'lms_bridge_enabled', label: 'LMS байланышы' },
+    { key: 'custom_roles_enabled', label: 'Ыңгайлаштырылган ролдор' },
+    { key: 'custom_domain_enabled', label: 'Жеке домен' },
+  ];
+
+  // Available limits for visual editor
+  const availableLimits = [
+    { key: 'maxUsers', label: 'Макс. колдонуучулар', type: 'number' },
+    { key: 'maxContacts', label: 'Макс. контакттар', type: 'number' },
+    { key: 'maxLessons', label: 'Макс. сабактар', type: 'number' },
+    { key: 'maxStudents', label: 'Макс. студенттер', type: 'number' },
+    { key: 'storageGB', label: 'Сактоо (GB)', type: 'number' },
+    { key: 'apiCallsPerMonth', label: 'API чакыруулар/ай', type: 'number' },
+  ];
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
@@ -240,30 +264,65 @@ export function PlansPage() {
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 placeholder="KGS"
               />
-              <Input
-                label="Лимиттер (JSON)"
-                value={JSON.stringify(formData.limits, null, 2)}
-                onChange={(e) => {
-                  try {
-                    setFormData({ ...formData, limits: JSON.parse(e.target.value) });
-                  } catch {
-                    // Invalid JSON, ignore
-                  }
-                }}
-                placeholder='{"maxUsers": 5, "maxContacts": 1000}'
-              />
-              <Input
-                label="Функциялар (JSON)"
-                value={JSON.stringify(formData.features, null, 2)}
-                onChange={(e) => {
-                  try {
-                    setFormData({ ...formData, features: JSON.parse(e.target.value) });
-                  } catch {
-                    // Invalid JSON, ignore
-                  }
-                }}
-                placeholder='{"crm_enabled": true, "payments_enabled": true}'
-              />
+
+              {/* Visual Feature Editor */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Функциялар</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableFeatures.map((feature) => (
+                    <label
+                      key={feature.key}
+                      className="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.features || {})[feature.key] === true}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            features: {
+                              ...(formData.features || {}),
+                              [feature.key]: e.target.checked,
+                            },
+                          });
+                        }}
+                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-gray-700">{feature.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Visual Limits Editor */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Лимиттер</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableLimits.map((limit) => (
+                    <div key={limit.key}>
+                      <label className="block text-sm text-gray-600 mb-1">{limit.label}</label>
+                      <Input
+                        type="number"
+                        value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
+                        onChange={(e) => {
+                          const numValue = e.target.value ? Number(e.target.value) : undefined;
+                          const newLimits = { ...(formData.limits || {}) };
+                          if (numValue !== undefined) {
+                            newLimits[limit.key] = numValue;
+                          } else {
+                            delete newLimits[limit.key];
+                          }
+                          setFormData({
+                            ...formData,
+                            limits: newLimits,
+                          });
+                        }}
+                        placeholder="0 = чексиз"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
               {formError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                   {formError}
@@ -330,28 +389,65 @@ export function PlansPage() {
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
               />
-              <Input
-                label="Лимиттер (JSON)"
-                value={JSON.stringify(formData.limits, null, 2)}
-                onChange={(e) => {
-                  try {
-                    setFormData({ ...formData, limits: JSON.parse(e.target.value) });
-                  } catch {
-                    // Invalid JSON, ignore
-                  }
-                }}
-              />
-              <Input
-                label="Функциялар (JSON)"
-                value={JSON.stringify(formData.features, null, 2)}
-                onChange={(e) => {
-                  try {
-                    setFormData({ ...formData, features: JSON.parse(e.target.value) });
-                  } catch {
-                    // Invalid JSON, ignore
-                  }
-                }}
-              />
+
+              {/* Visual Feature Editor */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Функциялар</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableFeatures.map((feature) => (
+                    <label
+                      key={feature.key}
+                      className="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.features || {})[feature.key] === true}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            features: {
+                              ...(formData.features || {}),
+                              [feature.key]: e.target.checked,
+                            },
+                          });
+                        }}
+                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-gray-700">{feature.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Visual Limits Editor */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Лимиттер</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableLimits.map((limit) => (
+                    <div key={limit.key}>
+                      <label className="block text-sm text-gray-600 mb-1">{limit.label}</label>
+                      <Input
+                        type="number"
+                        value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
+                        onChange={(e) => {
+                          const numValue = e.target.value ? Number(e.target.value) : undefined;
+                          const newLimits = { ...(formData.limits || {}) };
+                          if (numValue !== undefined) {
+                            newLimits[limit.key] = numValue;
+                          } else {
+                            delete newLimits[limit.key];
+                          }
+                          setFormData({
+                            ...formData,
+                            limits: newLimits,
+                          });
+                        }}
+                        placeholder="0 = чексиз"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
               {formError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                   {formError}
@@ -400,101 +496,193 @@ export function PlansPage() {
               onAction={() => setShowCreateForm(true)}
             />
           ) : (
-            <div className="space-y-4">
-              {plans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-                        <Badge variant="neutral">{plan.code}</Badge>
-                        {getStatusBadge(plan.status)}
-                      </div>
-                      {plan.description && (
-                        <p className="text-sm text-gray-600 mb-2">{plan.description}</p>
-                      )}
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        {plan.monthlyPrice && (
-                          <span>Айлык: {plan.monthlyPrice} {plan.currency}</span>
+            <>
+              {/* Plan Comparison Table */}
+              <div className="mb-8 overflow-x-auto">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Тарифтерди салыштыруу</h3>
+                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b">Функция/Лимит</th>
+                      {plans.map((plan) => (
+                        <th key={plan.id} className="px-4 py-3 text-center text-sm font-semibold text-gray-900 border-b">
+                          {plan.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {/* Pricing Row */}
+                    <tr>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-700">Баа (айлык)</td>
+                      {plans.map((plan) => (
+                        <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                          {plan.monthlyPrice ? `${plan.monthlyPrice} ${plan.currency}` : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-700">Баа (жылдык)</td>
+                      {plans.map((plan) => (
+                        <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                          {plan.yearlyPrice ? `${plan.yearlyPrice} ${plan.currency}` : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                    {/* Features */}
+                    {availableFeatures.map((feature) => (
+                      <tr key={feature.key}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{feature.label}</td>
+                        {plans.map((plan) => (
+                          <td key={plan.id} className="px-4 py-3 text-center">
+                            {plan.features[feature.key] ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full">
+                                <Check className="w-4 h-4" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 text-gray-400 rounded-full">
+                                <X className="w-4 h-4" />
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {/* Limits */}
+                    {availableLimits.map((limit) => (
+                      <tr key={limit.key}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{limit.label}</td>
+                        {plans.map((plan) => (
+                          <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                            {plan.limits[limit.key] !== undefined ? String(plan.limits[limit.key]) : '∞'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Plan Cards */}
+              <div className="space-y-4">
+                {plans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                          <Badge variant="neutral">{plan.code}</Badge>
+                          {getStatusBadge(plan.status)}
+                        </div>
+                        {plan.description && (
+                          <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
                         )}
-                        {plan.yearlyPrice && (
-                          <span>Жылдык: {plan.yearlyPrice} {plan.currency}</span>
-                        )}
+                        {/* Improved Pricing Display */}
+                        <div className="flex items-center space-x-4 mb-3">
+                          {plan.monthlyPrice && (
+                            <div className="bg-primary-50 border border-primary-200 rounded-lg px-4 py-2">
+                              <span className="text-xs text-primary-600 block">Айлык</span>
+                              <span className="text-lg font-bold text-primary-900">
+                                {plan.monthlyPrice.toLocaleString()} {plan.currency}
+                              </span>
+                            </div>
+                          )}
+                          {plan.yearlyPrice && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                              <span className="text-xs text-green-600 block">Жылдык</span>
+                              <span className="text-lg font-bold text-green-900">
+                                {plan.yearlyPrice.toLocaleString()} {plan.currency}
+                              </span>
+                            </div>
+                          )}
+                          {plan.monthlyPrice && plan.yearlyPrice && (
+                            <div className="text-xs text-gray-500">
+                              {(plan.yearlyPrice / plan.monthlyPrice).toFixed(1)}x айлык
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(plan)}
-                        title="Оңдоо"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {plan.status === 'active' ? (
+                      <div className="flex items-center space-x-2 ml-4">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleStatusChange(plan.id, 'inactive')}
-                          disabled={statusLoading === plan.id}
-                          title="Өчүрүү"
+                          onClick={() => handleEdit(plan)}
+                          title="Оңдоо"
                         >
-                          <PowerOff className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      ) : plan.status === 'inactive' ? (
-                        <>
+                        {plan.status === 'active' ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleStatusChange(plan.id, 'active')}
+                            onClick={() => handleStatusChange(plan.id, 'inactive')}
                             disabled={statusLoading === plan.id}
-                            title="Активдештирүү"
+                            title="Өчүрүү"
                           >
-                            <Power className="w-4 h-4" />
+                            <PowerOff className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleArchive(plan)}
-                            disabled={statusLoading === plan.id}
-                            title="Архивдөө"
-                          >
-                            <Archive className="w-4 h-4" />
-                          </Button>
-                        </>
-                      ) : null}
+                        ) : plan.status === 'inactive' ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStatusChange(plan.id, 'active')}
+                              disabled={statusLoading === plan.id}
+                              title="Активдештирүү"
+                            >
+                              <Power className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleArchive(plan)}
+                              disabled={statusLoading === plan.id}
+                              title="Архивдөө"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
+                    {Object.keys(plan.features).length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Функциялардын тизмеси:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {availableFeatures.map((feature) => (
+                            <div key={feature.key} className="flex items-center space-x-2 text-sm">
+                              {plan.features[feature.key] ? (
+                                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                              ) : (
+                                <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              )}
+                              <span className={plan.features[feature.key] ? 'text-gray-900' : 'text-gray-400'}>
+                                {feature.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {Object.keys(plan.limits).length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Лимиттер:</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          {Object.entries(plan.limits).map(([key, value]) => (
+                            <div key={key} className="text-gray-600">
+                              <span className="font-medium">{key}:</span> {String(value)}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {Object.keys(plan.features).length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Функциялар:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(plan.features).map(([key, enabled]) => (
-                          <Badge key={key} variant={enabled ? 'success' : 'neutral'}>
-                            {key}: {enabled ? 'Активдүү' : 'Өчүрүлгөн'}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {Object.keys(plan.limits).length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Лимиттер:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                        {Object.entries(plan.limits).map(([key, value]) => (
-                          <div key={key} className="text-gray-600">
-                            <span className="font-medium">{key}:</span> {String(value)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -506,6 +694,6 @@ export function PlansPage() {
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } })}
       />
-    </div>
+    </div >
   );
 }
