@@ -1,45 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Building2, Users, Flag, TrendingUp, Calendar, Download } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { dashboardApi, type PlatformOverviewResponse } from '../../shared/api/dashboardApi';
 
 export function PlatformDashboardPage() {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [data, setData] = useState<PlatformOverviewResponse | null>(null);
 
-  // TODO: Fetch real data from API
-  const stats = {
-    totalTenants: 12,
-    activeTenants: 8,
-    platformUsers: 5,
-    activeFeatures: 24,
-  };
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
-  const tenantTrendData = [
-    { month: 'Янв', tenants: 8 },
-    { month: 'Фев', tenants: 9 },
-    { month: 'Март', tenants: 10 },
-    { month: 'Апр', tenants: 11 },
-    { month: 'Май', tenants: 12 },
-  ];
-
-  const comparisonData = [
-    { name: 'Активдүү', value: 8 },
-    { name: 'Активсиз', value: 4 },
-  ];
-
-  const sparklineData = {
-    totalTenants: [8, 9, 10, 11, 12],
-    activeTenants: [6, 7, 7, 8, 8],
-    platformUsers: [4, 4, 5, 5, 5],
-    activeFeatures: [20, 21, 22, 23, 24],
+  const loadDashboardData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const overview = await dashboardApi.getPlatformOverview();
+      setData(overview);
+    } catch (err: any) {
+      setError('Маалыматты алуу мүмкүн болгон жок');
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = () => {
-    // TODO: Implement actual export functionality
+    if (!data) return;
     const exportData = {
-      stats,
-      tenantTrendData,
-      comparisonData,
+      ...data,
       dateRange,
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -52,6 +43,30 @@ export function PlatformDashboardPage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Жүктөлүүдө...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Маалымат жок</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -87,85 +102,76 @@ export function PlatformDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Жалпы тенанттар"
-          value={stats.totalTenants}
+          value={data.tenants.total}
           icon={Building2}
           color="blue"
-          sparkline={sparklineData.totalTenants}
         />
         <StatCard
           title="Активдүү тенанттар"
-          value={stats.activeTenants}
+          value={data.tenants.active}
           icon={TrendingUp}
           color="green"
-          sparkline={sparklineData.activeTenants}
         />
         <StatCard
           title="Платформа колдонуучулары"
-          value={stats.platformUsers}
+          value={data.platformUsers.total}
           icon={Users}
           color="purple"
-          sparkline={sparklineData.platformUsers}
         />
         <StatCard
-          title="Активдүү функциялар"
-          value={stats.activeFeatures}
+          title="Активдүү тарифтер"
+          value={data.plans.active}
           icon={Flag}
           color="orange"
-          sparkline={sparklineData.activeFeatures}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Тенанттардын өсүүсү</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Тенанттардын абалы</h2>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={tenantTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="tenants"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={{ fill: '#2563eb', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Активдүү</span>
+                <span className="text-sm font-medium text-gray-900">{data.tenants.active}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Актив эмес</span>
+                <span className="text-sm font-medium text-gray-900">{data.tenants.inactive}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Токтотулган</span>
+                <span className="text-sm font-medium text-gray-900">{data.tenants.suspended}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Архивделген</span>
+                <span className="text-sm font-medium text-gray-900">{data.tenants.archived}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Тенанттардын абалы</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Функционалдык белгилер</h2>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={comparisonData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Жалпы</span>
+                <span className="text-sm font-medium text-gray-900">{data.featureFlags.total}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Активдүү</span>
+                <span className="text-sm font-medium text-green-600">{data.featureFlags.enabled}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Өчүрүлгөн</span>
+                <span className="text-sm font-medium text-gray-500">{data.featureFlags.disabled}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -186,6 +192,28 @@ export function PlatformDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-gray-900">Акыркы аракеттер</h2>
+          </CardHeader>
+          <CardContent>
+            {data.auditLogs.recent.length === 0 ? (
+              <div className="text-sm text-gray-500">Аракеттер жок</div>
+            ) : (
+              <div className="space-y-2">
+                {data.auditLogs.recent.map((log) => (
+                  <div key={log.id} className="text-sm">
+                    <div className="font-medium text-gray-900">{log.title}</div>
+                    <div className="text-gray-500">
+                      {log.actorEmail || 'Белгисиз'} • {new Date(log.createdAt).toLocaleDateString('ky-KG')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -196,10 +224,9 @@ interface StatCardProps {
   value: number;
   icon: any;
   color: 'blue' | 'green' | 'purple' | 'orange';
-  sparkline?: number[];
 }
 
-function StatCard({ title, value, icon: Icon, color, sparkline }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -207,19 +234,10 @@ function StatCard({ title, value, icon: Icon, color, sparkline }: StatCardProps)
     orange: 'bg-orange-50 text-orange-600',
   };
 
-  const strokeColors = {
-    blue: '#2563eb',
-    green: '#16a34a',
-    purple: '#9333ea',
-    orange: '#ea580c',
-  };
-
-  const sparklineChartData = sparkline ? sparkline.map((val, idx) => ({ idx, val })) : [];
-
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">{title}</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
@@ -228,25 +246,6 @@ function StatCard({ title, value, icon: Icon, color, sparkline }: StatCardProps)
             <Icon className="w-6 h-6" />
           </div>
         </div>
-        {sparkline && sparkline.length > 0 && (
-          <ResponsiveContainer width="100%" height={40}>
-            <AreaChart data={sparklineChartData}>
-              <defs>
-                <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={strokeColors[color]} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={strokeColors[color]} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="val"
-                stroke={strokeColors[color]}
-                strokeWidth={2}
-                fill={`url(#gradient-${color})`}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
       </CardContent>
     </Card>
   );

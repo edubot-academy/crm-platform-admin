@@ -9,7 +9,7 @@ import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { ArrowLeft, Globe, CreditCard, Users, Settings, FileText } from 'lucide-react';
 import { tenantApi, type Tenant, type UpdateTenantData } from './tenantApi';
 import { tenantDomainsApi, type TenantDomain, type CreateTenantDomainDto } from './tenantDomainsApi';
-import { tenantUsersApi, type TenantUserSummary, type GetTenantUsersParams } from './tenantUsersApi';
+import { tenantUsersApi, type TenantUserSummary, type GetTenantUsersParams, type CreateTenantUserDto } from './tenantUsersApi';
 import { tenantSettingsApi, type TenantConfig, type UpdateTenantConfigDto } from './tenantSettingsApi';
 import { plansApi, type Plan } from '../plans/plansApi';
 import { SkeletonCard } from '../../shared/components/SkeletonCard';
@@ -47,6 +47,16 @@ export function TenantDetailPage() {
   const [createDomainForm, setCreateDomainForm] = useState<CreateTenantDomainDto>({ domain: '', type: 'default' });
   const [domainActionLoading, setDomainActionLoading] = useState<string | null>(null);
   const [userActionLoading, setUserActionLoading] = useState<string | null>(null);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState<CreateTenantUserDto>({
+    name: '',
+    email: '',
+    role: 'admin',
+    status: 'active',
+    sendInvite: true,
+  });
+  const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [createUserError, setCreateUserError] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -318,6 +328,55 @@ export function TenantDetailPage() {
       setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     } finally {
       setUserActionLoading(null);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateUserError('');
+
+    // Validation
+    if (!createUserForm.name.trim()) {
+      setCreateUserError('Аты-жөнүн жазыңыз');
+      return;
+    }
+    if (!createUserForm.email.trim()) {
+      setCreateUserError('Email жазыңыз');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createUserForm.email)) {
+      setCreateUserError('Email туура эмес');
+      return;
+    }
+    if (!createUserForm.role) {
+      setCreateUserError('Роль тандаңыз');
+      return;
+    }
+
+    setCreateUserLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await tenantUsersApi.createTenantUser(tenantId!, createUserForm);
+      setSuccess('Колдонуучу ийгиликтүү кошулду');
+      toast.success('Колдонуучу ийгиликтүү кошулду');
+      setShowCreateUserModal(false);
+      setCreateUserForm({
+        name: '',
+        email: '',
+        role: 'admin',
+        status: 'active',
+        sendInvite: true,
+      });
+      loadUsers();
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Колдонуучу кошууда ката кетти';
+      setCreateUserError(errorMessage);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setCreateUserLoading(false);
     }
   };
 
@@ -752,7 +811,12 @@ export function TenantDetailPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900">Тенант колдонуучулары</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Тенант колдонуучулары</h2>
+                <Button onClick={() => setShowCreateUserModal(true)}>
+                  Жаңы колдонуучу кошуу
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {usersLoading ? (
@@ -1005,6 +1069,105 @@ export function TenantDetailPage() {
                   </Button>
                   <Button type="submit" disabled={domainActionLoading === 'create'}>
                     {domainActionLoading === 'create' ? 'Сактоо...' : 'Сактоо'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateUserModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Жаңы колдонуучу кошуу</h2>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                {createUserError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    {createUserError}
+                  </div>
+                )}
+                <Input
+                  label="Аты-жөнү"
+                  value={createUserForm.name}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, name: e.target.value })}
+                  placeholder="Иван Иванов"
+                  required
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={createUserForm.email}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                  placeholder="user@example.com"
+                  required
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Роль
+                  </label>
+                  <select
+                    value={createUserForm.role}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, role: e.target.value as 'admin' | 'manager' | 'sales' | 'assistant' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="admin">Админ</option>
+                    <option value="manager">Менеджер</option>
+                    <option value="sales">Сатуу адиси</option>
+                    <option value="assistant">Ассистент</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Статус
+                  </label>
+                  <select
+                    value={createUserForm.status}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, status: e.target.value as 'active' | 'inactive' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="active">Активдүү</option>
+                    <option value="inactive">Актив эмес</option>
+                  </select>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="sendInvite"
+                    checked={createUserForm.sendInvite}
+                    onChange={(e) => setCreateUserForm({ ...createUserForm, sendInvite: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="sendInvite" className="ml-2 text-sm text-gray-700">
+                    Чакыруу жөнөтүү
+                  </label>
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowCreateUserModal(false);
+                      setCreateUserForm({
+                        name: '',
+                        email: '',
+                        role: 'admin',
+                        status: 'active',
+                        sendInvite: true,
+                      });
+                      setCreateUserError('');
+                    }}
+                    disabled={createUserLoading}
+                  >
+                    Жокко чыгаруу
+                  </Button>
+                  <Button type="submit" disabled={createUserLoading}>
+                    {createUserLoading ? 'Сактоо...' : 'Сактоо'}
                   </Button>
                 </div>
               </form>

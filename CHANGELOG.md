@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added bounce-short animation for interactive feedback
 - Enhanced Tailwind config with comprehensive animation keyframes
 
+**Feature Enhancements**:
+- Added create user modal to TenantDetailPage with form validation
+- Added ability to create new tenant users with name, email, role, status, and invite options
+- Integrated dashboard API to fetch real platform overview data
+- Added feature flags overview card to dashboard showing total, enabled, and disabled flags
+- Added recent audit logs card to dashboard showing latest platform actions
+- Simplified dashboard display by removing complex charts in favor of clear status breakdowns
+
 ### Changed
 - Updated Button component with focus ring styles for better keyboard navigation visibility
 - Updated Input component with focus ring styles

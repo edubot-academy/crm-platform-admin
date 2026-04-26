@@ -32,6 +32,15 @@ export interface UpdateTenantUserStatusDto {
   status: boolean;
 }
 
+export interface CreateTenantUserDto {
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'sales' | 'assistant';
+  status?: 'active' | 'inactive';
+  password?: string;
+  sendInvite?: boolean;
+}
+
 export const tenantUsersApi = {
   async getTenantUsers(tenantId: string, params: GetTenantUsersParams = {}): Promise<TenantUsersResponse> {
     const response = await apiClient.get<TenantUsersResponse>(`/platform/tenants/${tenantId}/users`, { params });
@@ -40,6 +49,11 @@ export const tenantUsersApi = {
 
   async updateTenantUserStatus(tenantId: string, userId: string, data: UpdateTenantUserStatusDto): Promise<TenantUserSummary> {
     const response = await apiClient.patch<TenantUserSummary>(`/platform/tenants/${tenantId}/users/${userId}/status`, data);
+    return response.data;
+  },
+
+  async createTenantUser(tenantId: string, data: CreateTenantUserDto): Promise<TenantUserSummary> {
+    const response = await apiClient.post<TenantUserSummary>(`/platform/tenants/${tenantId}/users`, data);
     return response.data;
   },
 };
