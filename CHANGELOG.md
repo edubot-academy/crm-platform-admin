@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-04-27
+
+### Added
+
+#### Demo Requests Management
+- **Demo Requests Page**:
+  - List all demo requests with pagination, search, and status filtering
+  - Search by name, company, phone, or email
+  - Filter by status (new, contacted, demo_scheduled, closed, spam)
+  - Update demo request status directly from the table
+  - Display source information (e.g., CRM Landing)
+  - Show creation date with Kyrgyz locale formatting
+  - Loading, error, and empty states
+  - Full Kyrgyz UI localization
+- **API Integration**:
+  - GET `/api/platform/demo-requests` - List demo requests with pagination and filters
+  - GET `/api/platform/demo-requests/:id` - Get demo request details
+  - PATCH `/api/platform/demo-requests/:id/status` - Update demo request status
+- **Navigation**:
+  - Added route `/platform/demo-requests` to router
+  - Added sidebar navigation item with MessageSquare icon
+  - Label: "CRM Демо Сурамдары"
+
+#### Type Safety
+- TypeScript interfaces for demo requests:
+  - `DemoRequest` - Demo request data model
+  - `DemoRequestStatus` - Status type union
+  - `DemoRequestsQueryParams` - Query parameters for listing
+  - `DemoRequestsResponse` - Paginated response
+  - `UpdateDemoRequestStatusData` - Status update payload
+
 ## [0.1.0] - 2026-04-26
 
 ### Initial Release

@@ -7,6 +7,7 @@ import {
   CreditCard,
   Flag,
   FileText,
+  MessageSquare,
   Settings,
   LogOut
 } from 'lucide-react';
@@ -18,6 +19,7 @@ const sidebarItems = [
   { path: '/platform/users', label: 'Платформа колдонуучулары', icon: Users },
   { path: '/platform/plans', label: 'Тарифтер', icon: CreditCard },
   { path: '/platform/feature-flags', label: 'Функциялар', icon: Flag },
+  { path: '/platform/demo-requests', label: 'CRM Демо Сурамдары', icon: MessageSquare },
   { path: '/platform/audit-logs', label: 'Аудит логдор', icon: FileText },
   { path: '/platform/settings', label: 'Жөндөөлөр', icon: Settings },
 ];
@@ -59,8 +61,8 @@ export function PlatformLayout() {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100'
                     }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />

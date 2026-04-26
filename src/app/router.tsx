@@ -11,6 +11,7 @@ import { PlatformFeatureFlagsPage } from '../features/feature-flags/PlatformFeat
 import { PlansPage } from '../features/plans/PlansPage';
 import { AuditLogsPage } from '../features/audit-logs/AuditLogsPage';
 import { PlatformSettingsPage } from '../features/settings/PlatformSettingsPage';
+import { DemoRequestsPage } from '../features/demo-requests/DemoRequestsPage';
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +61,10 @@ export const router = createBrowserRouter([
       {
         path: 'audit-logs',
         element: <AuditLogsPage />,
+      },
+      {
+        path: 'demo-requests',
+        element: <DemoRequestsPage />,
       },
       {
         path: 'settings',
