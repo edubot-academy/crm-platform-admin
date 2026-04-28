@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { PlatformProtectedRoute } from '../shared/auth/PlatformProtectedRoute';
 import { PlatformLayout } from '../layouts/PlatformLayout';
 import { LoadingSpinner } from '../shared/components/LoadingSpinner';
+import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('../features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -16,6 +17,7 @@ const PlansPage = lazy(() => import('../features/plans/PlansPage').then(m => ({ 
 const AuditLogsPage = lazy(() => import('../features/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
 const PlatformSettingsPage = lazy(() => import('../features/settings/PlatformSettingsPage').then(m => ({ default: m.PlatformSettingsPage })));
 const DemoRequestsPage = lazy(() => import('../features/demo-requests/DemoRequestsPage').then(m => ({ default: m.DemoRequestsPage })));
+const InviteAcceptPage = lazy(() => import('../features/invite/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })));
 
 // Loading fallback component
 function PageLoader() {
@@ -30,9 +32,21 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <LoginPage />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <LoginPage />
+        </Suspense>
+      </ErrorBoundary>
+    ),
+  },
+  {
+    path: '/accept-invite',
+    element: (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <InviteAcceptPage />
+        </Suspense>
+      </ErrorBoundary>
     ),
   },
   {
@@ -42,9 +56,11 @@ export const router = createBrowserRouter([
   {
     path: '/platform',
     element: (
-      <PlatformProtectedRoute>
-        <PlatformLayout />
-      </PlatformProtectedRoute>
+      <ErrorBoundary>
+        <PlatformProtectedRoute>
+          <PlatformLayout />
+        </PlatformProtectedRoute>
+      </ErrorBoundary>
     ),
     children: [
       {

@@ -13,6 +13,7 @@ export interface PlatformUser {
   lastLoginAt: string | null;
   deletedAt: string | null;
   telegramChatId: string | null;
+  inviteLink?: string;
 }
 
 export interface PlatformUsersResponse {
@@ -29,6 +30,14 @@ export interface CreatePlatformUserData {
 
 export interface UpdateUserStatusData {
   isActive: boolean;
+}
+
+export interface ResendInviteResponse {
+  userId: number;
+  email: string;
+  inviteLink: string;
+  inviteToken: string;
+  message: string;
 }
 
 export const platformUsersApi = {
@@ -49,6 +58,11 @@ export const platformUsersApi = {
 
   async updateUserStatus(userId: number, data: UpdateUserStatusData): Promise<PlatformUser> {
     const response = await apiClient.patch<PlatformUser>(`/platform/users/${userId}/status`, data);
+    return response.data;
+  },
+
+  async resendInvite(userId: number): Promise<ResendInviteResponse> {
+    const response = await apiClient.post<ResendInviteResponse>(`/platform/users/${userId}/resend-invite`);
     return response.data;
   },
 };

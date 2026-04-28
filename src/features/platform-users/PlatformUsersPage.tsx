@@ -8,14 +8,18 @@ import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { Plus, Power, PowerOff, Users } from 'lucide-react';
+import { Plus, Power, PowerOff, Users, Copy } from 'lucide-react';
 import { platformUsersApi, type PlatformUser, type CreatePlatformUserData } from './platformUsersApi';
+import { InviteLinkBanner } from '../tenants/components/InviteLinkBanner';
 
 export function PlatformUsersPage() {
   const [users, setUsers] = useState<PlatformUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [showInviteLink, setShowInviteLink] = useState(false);
+  const [userActionLoading, setUserActionLoading] = useState<number | null>(null);
   const [formData, setFormData] = useState<CreatePlatformUserData>({
     fullName: '',
     email: '',
@@ -70,8 +74,12 @@ export function PlatformUsersPage() {
     setFormLoading(true);
 
     try {
-      await platformUsersApi.createUser(formData);
+      const result = await platformUsersApi.createUser(formData);
       toast.success('Колдонуучу ийгиликтүү түзүлдү');
+      if (result.inviteLink) {
+        setInviteLink(result.inviteLink);
+        setShowInviteLink(true);
+      }
       setShowCreateForm(false);
       setFormData({ fullName: '', email: '', password: '', role: 'superadmin' });
       loadUsers();
@@ -102,6 +110,27 @@ export function PlatformUsersPage() {
         }
       },
     });
+  };
+
+  const handleResendInvite = async (userId: number) => {
+    setUserActionLoading(userId);
+    try {
+      const result = await platformUsersApi.resendInvite(userId);
+      setInviteLink(result.inviteLink);
+      setShowInviteLink(true);
+      toast.success('Чакыруу ийгиликтүү кайра жөнөтүлдү');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Чакырууну кайра жөнөтүүдө ката кетти');
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    if (inviteLink) {
+      navigator.clipboard.writeText(inviteLink);
+      toast.success('Чакыруу шилтемеси көчүрүлдү');
+    }
   };
 
   const columns = [
@@ -136,6 +165,14 @@ export function PlatformUsersPage() {
       header: 'Аракеттер',
       render: (_: any, row: PlatformUser) => (
         <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleResendInvite(row.id)}
+            disabled={userActionLoading === row.id}
+          >
+            {userActionLoading === row.id ? 'Күтүүдө...' : 'Чакыруу жөнөтүү'}
+          </Button>
           {!row.isActive ? (
             <Button
               variant="ghost"
@@ -171,6 +208,14 @@ export function PlatformUsersPage() {
           Жаңы колдонуучу
         </Button>
       </div>
+
+      {showInviteLink && inviteLink && (
+        <InviteLinkBanner
+          inviteLink={inviteLink}
+          onCopy={handleCopyInviteLink}
+          onClose={() => setShowInviteLink(false)}
+        />
+      )}
 
       {showCreateForm && (
         <Card className="mb-6">

@@ -5,19 +5,20 @@ export interface TenantUserSummary {
   name: string;
   email: string;
   role: 'admin' | 'manager' | 'sales' | 'assistant';
-  status: 'active' | 'inactive' | 'suspended' | boolean;
+  isActive: boolean;
   companyId: number | null;
   tenantId: string | number;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
+  inviteLink?: string;
 }
 
 export interface GetTenantUsersParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: string;
+  isActive?: boolean;
 }
 
 export interface TenantUsersResponse {
@@ -29,16 +30,20 @@ export interface TenantUsersResponse {
 }
 
 export interface UpdateTenantUserStatusDto {
-  status: boolean;
+  isActive: boolean;
 }
 
 export interface CreateTenantUserDto {
   name: string;
   email: string;
   role: 'admin' | 'manager' | 'sales' | 'assistant';
-  status?: 'active' | 'inactive';
+  isActive?: boolean;
   password?: string;
   sendInvite?: boolean;
+}
+
+export interface ResendInviteResponse {
+  inviteLink: string;
 }
 
 export const tenantUsersApi = {
@@ -54,6 +59,11 @@ export const tenantUsersApi = {
 
   async createTenantUser(tenantId: string, data: CreateTenantUserDto): Promise<TenantUserSummary> {
     const response = await apiClient.post<TenantUserSummary>(`/platform/tenants/${tenantId}/users`, data);
+    return response.data;
+  },
+
+  async resendInvite(tenantId: string, userId: string): Promise<ResendInviteResponse> {
+    const response = await apiClient.post<ResendInviteResponse>(`/platform/tenants/${tenantId}/users/${userId}/resend-invite`);
     return response.data;
   },
 };

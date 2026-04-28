@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-28
+
+### Added
+
+#### Invite Link Functionality
+
+**Tenant Users**:
+- Added `inviteLink` field to `TenantUserSummary` interface
+- Added `resendInvite()` API endpoint for tenant users (`POST /platform/tenants/:tenantId/users/:userId/resend-invite`)
+- Added invite link display banner in TenantDetailPage after user creation
+- Added copy to clipboard functionality for invite links
+- Added "Чакыруу жөнөтүү" (Resend Invite) button in tenant users table
+- Created `InviteLinkBanner` component for reusable invite link display
+- Created `CreateUserModal` component to reduce TenantDetailPage size
+
+**Platform Users**:
+- Added `inviteLink` field to `PlatformUser` interface
+- Added `resendInvite()` API endpoint for platform users (`POST /platform/users/:id/resend-invite`)
+- Added invite link display banner in PlatformUsersPage after user creation
+- Added copy to clipboard functionality for invite links
+- Added "Чакыруу жөнөтүү" (Resend Invite) button in platform users table
+- Reused `InviteLinkBanner` component for consistent UI
+
+**Invite Acceptance**:
+- Created `InviteAcceptPage` component for password setup on invite acceptance
+- Added password strength indicator with 5-level visual meter (Азырк, Орто, Жакшы, Мыкты, Өтө мыкты)
+- Password validation: minimum 8 characters, uppercase, numbers, special characters
+- Added `/accept-invite` public route to router
+- Integrated with backend endpoint `POST /auth/accept-invite`
+- Success message display after password setup
+
+**Architectural Improvements**:
+- Added `ErrorBoundary` components to router for better error handling (login, accept-invite, platform routes)
+- Extracted `InviteLinkBanner` component from TenantDetailPage for reusability
+- Extracted `CreateUserModal` component from TenantDetailPage for maintainability
+- Reduced TenantDetailPage from ~1227 lines to ~1150 lines
+
+### Changed
+- Standardized user status field from `status` to `isActive` (boolean) across all interfaces
+- Updated `TenantUserSummary`, `GetTenantUsersParams`, `UpdateTenantUserStatusDto`, `CreateTenantUserDto` to use `isActive: boolean`
+- Updated `TenantDetailPage` to use `isActive` instead of `status`
+- Removed "Ачуу" (Open) button from invite link banner to prevent 404 errors (invite links are for tenant CRM app, not platform admin)
+- Updated invite link banner label to "Чакыруу шилтемеси (колдонуучуга жөнөтүңүз):" for clarity
+
+### Fixed
+- Removed unused `Copy` import from TenantDetailPage after component extraction
+- Removed unused `navigate` import from InviteAcceptPage after removing auto-redirect
+
 ## [0.4.0] - 2026-04-27
 
 ### Added

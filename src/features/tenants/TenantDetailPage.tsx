@@ -14,6 +14,8 @@ import { tenantSettingsApi, type TenantConfig, type UpdateTenantConfigDto } from
 import { plansApi, type Plan } from '../plans/plansApi';
 import { SkeletonCard } from '../../shared/components/SkeletonCard';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { InviteLinkBanner } from './components/InviteLinkBanner';
+import { CreateUserModal } from './components/CreateUserModal';
 
 export function TenantDetailPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
@@ -52,11 +54,13 @@ export function TenantDetailPage() {
     name: '',
     email: '',
     role: 'admin',
-    status: 'active',
+    isActive: true,
     sendInvite: true,
   });
   const [createUserLoading, setCreateUserLoading] = useState(false);
   const [createUserError, setCreateUserError] = useState('');
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [showInviteLink, setShowInviteLink] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -309,15 +313,13 @@ export function TenantDetailPage() {
     }
   };
 
-  const handleUpdateUserStatus = async (userId: string, newStatus: 'active' | 'inactive' | 'suspended' | boolean) => {
+  const handleUpdateUserStatus = async (userId: string, newStatus: boolean) => {
     setUserActionLoading(userId);
     setError('');
     setSuccess('');
 
     try {
-      // Convert string status to boolean to match backend format
-      const statusValue = newStatus === 'active' ? true : false;
-      await tenantUsersApi.updateTenantUserStatus(tenantId!, userId, { status: statusValue });
+      await tenantUsersApi.updateTenantUserStatus(tenantId!, userId, { isActive: newStatus });
       setSuccess('Колдонуучу статусу ийгиликтүү өзгөртүлдү');
       toast.success('Колдонуучу статусу ийгиликтүү өзгөртүлдү');
       setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
@@ -328,6 +330,32 @@ export function TenantDetailPage() {
       setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
     } finally {
       setUserActionLoading(null);
+    }
+  };
+
+  const handleResendInvite = async (userId: string) => {
+    setUserActionLoading(userId);
+    setError('');
+    setSuccess('');
+
+    try {
+      const result = await tenantUsersApi.resendInvite(tenantId!, userId);
+      setInviteLink(result.inviteLink);
+      setShowInviteLink(true);
+      setSuccess('Чакыруу шилтемеси ийгиликтүү жаңыртылды');
+      toast.success('Чакыруу шилтемеси ийгиликтүү жаңыртылды');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Чакыруу шилтемесин жаңыртууда ката кетти');
+      toast.error(err.response?.data?.message || 'Чакыруу шилтемесин жаңыртууда ката кетти');
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    if (inviteLink) {
+      navigator.clipboard.writeText(inviteLink);
+      toast.success('Шилтеме көчүрүлдү');
     }
   };
 
@@ -358,15 +386,19 @@ export function TenantDetailPage() {
     setSuccess('');
 
     try {
-      await tenantUsersApi.createTenantUser(tenantId!, createUserForm);
+      const result = await tenantUsersApi.createTenantUser(tenantId!, createUserForm);
       setSuccess('Колдонуучу ийгиликтүү кошулду');
       toast.success('Колдонуучу ийгиликтүү кошулду');
+      if (result.inviteLink) {
+        setInviteLink(result.inviteLink);
+        setShowInviteLink(true);
+      }
       setShowCreateUserModal(false);
       setCreateUserForm({
         name: '',
         email: '',
         role: 'admin',
-        status: 'active',
+        isActive: true,
         sendInvite: true,
       });
       loadUsers();
@@ -417,8 +449,7 @@ export function TenantDetailPage() {
     return <Badge variant={variant}>{label}</Badge>;
   };
 
-  const getUserStatusBadge = (status: string | boolean) => {
-    const isActive = status === true || status === 'active';
+  const getUserStatusBadge = (isActive: boolean) => {
     const variant = isActive ? 'success' : 'warning';
     const label = isActive ? 'Активдүү' : 'Актив эмес';
     return <Badge variant={variant}>{label}</Badge>;
@@ -477,6 +508,14 @@ export function TenantDetailPage() {
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
+      )}
+
+      {showInviteLink && inviteLink && (
+        <InviteLinkBanner
+          inviteLink={inviteLink}
+          onCopy={handleCopyInviteLink}
+          onClose={() => setShowInviteLink(false)}
+        />
       )}
 
       {/* Tabs */}
@@ -844,7 +883,7 @@ export function TenantDetailPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{getUserRoleBadge(user.role)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{getUserStatusBadge(user.status)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{getUserStatusBadge(user.isActive)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ky-KG') : 'Кирген эмес'}
                             </td>
@@ -853,7 +892,15 @@ export function TenantDetailPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex space-x-2">
-                                {(user.status === true || user.status === 'active') && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleResendInvite(user.id.toString())}
+                                  disabled={userActionLoading === user.id.toString()}
+                                >
+                                  {userActionLoading === user.id.toString() ? 'Күтүүдө...' : 'Чакыруу жөнөтүү'}
+                                </Button>
+                                {user.isActive === true && (
                                   <Button
                                     variant="secondary"
                                     size="sm"
@@ -862,7 +909,7 @@ export function TenantDetailPage() {
                                         isOpen: true,
                                         title: 'Колдонуучуну өчүрүү',
                                         message: `${user.name} колдонуучусун өчүрүүгө ишенесизби?`,
-                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), 'inactive'),
+                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), false),
                                       });
                                     }}
                                     disabled={userActionLoading === user.id.toString()}
@@ -870,7 +917,7 @@ export function TenantDetailPage() {
                                     {userActionLoading === user.id.toString() ? 'Күтүүдө...' : 'Өчүрүү'}
                                   </Button>
                                 )}
-                                {(user.status === false || user.status === 'inactive' || user.status === 'suspended') && (
+                                {user.isActive === false && (
                                   <Button
                                     variant="secondary"
                                     size="sm"
@@ -879,7 +926,7 @@ export function TenantDetailPage() {
                                         isOpen: true,
                                         title: 'Колдонуучуну активдештирүү',
                                         message: `${user.name} колдонуучусун активдештирүүгө ишенесизби?`,
-                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), 'active'),
+                                        onConfirm: () => handleUpdateUserStatus(user.id.toString(), true),
                                       });
                                     }}
                                     disabled={userActionLoading === user.id.toString()}
@@ -1078,103 +1125,25 @@ export function TenantDetailPage() {
       )}
 
       {/* Create User Modal */}
-      {showCreateUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-gray-900">Жаңы колдонуучу кошуу</h2>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateUser} className="space-y-4">
-                {createUserError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {createUserError}
-                  </div>
-                )}
-                <Input
-                  label="Аты-жөнү"
-                  value={createUserForm.name}
-                  onChange={(e) => setCreateUserForm({ ...createUserForm, name: e.target.value })}
-                  placeholder="Иван Иванов"
-                  required
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  value={createUserForm.email}
-                  onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
-                  placeholder="user@example.com"
-                  required
-                />
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Роль
-                  </label>
-                  <select
-                    value={createUserForm.role}
-                    onChange={(e) => setCreateUserForm({ ...createUserForm, role: e.target.value as 'admin' | 'manager' | 'sales' | 'assistant' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="admin">Админ</option>
-                    <option value="manager">Менеджер</option>
-                    <option value="sales">Сатуу адиси</option>
-                    <option value="assistant">Ассистент</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Статус
-                  </label>
-                  <select
-                    value={createUserForm.status}
-                    onChange={(e) => setCreateUserForm({ ...createUserForm, status: e.target.value as 'active' | 'inactive' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="active">Активдүү</option>
-                    <option value="inactive">Актив эмес</option>
-                  </select>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="sendInvite"
-                    checked={createUserForm.sendInvite}
-                    onChange={(e) => setCreateUserForm({ ...createUserForm, sendInvite: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="sendInvite" className="ml-2 text-sm text-gray-700">
-                    Чакыруу жөнөтүү
-                  </label>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      setShowCreateUserModal(false);
-                      setCreateUserForm({
-                        name: '',
-                        email: '',
-                        role: 'admin',
-                        status: 'active',
-                        sendInvite: true,
-                      });
-                      setCreateUserError('');
-                    }}
-                    disabled={createUserLoading}
-                  >
-                    Жокко чыгаруу
-                  </Button>
-                  <Button type="submit" disabled={createUserLoading}>
-                    {createUserLoading ? 'Сактоо...' : 'Сактоо'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <CreateUserModal
+        isOpen={showCreateUserModal}
+        form={createUserForm}
+        error={createUserError}
+        loading={createUserLoading}
+        onChange={setCreateUserForm}
+        onSubmit={handleCreateUser}
+        onClose={() => {
+          setShowCreateUserModal(false);
+          setCreateUserForm({
+            name: '',
+            email: '',
+            role: 'admin',
+            isActive: true,
+            sendInvite: true,
+          });
+          setCreateUserError('');
+        }}
+      />
     </div>
   );
 }
