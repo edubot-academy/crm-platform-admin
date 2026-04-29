@@ -9,6 +9,7 @@ import apiClient from '../../shared/api/client';
 export function InviteAcceptPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const tenantId = searchParams.get('tenantId');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,19 +57,17 @@ export function InviteAcceptPage() {
     setLoading(true);
 
     try {
-      await apiClient.post('/auth/accept-invite', { token, password });
+      await apiClient.post(
+        '/auth/accept-invite',
+        { token, password },
+        tenantId ? { headers: { 'X-Company-Id': tenantId } } : undefined
+      );
       setSuccess(true);
       toast.success('Сырсөздү ийгиликтүү орнотулду. Кирүү үчүн логин кылыңыз.');
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        const errorMessage = 'Бул функция азырынча иштебейт. Backend жөндөөсү керек.';
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } else {
-        const errorMessage = err.response?.data?.message || 'Чакырууну кабыл алууда ката кетти';
-        setError(errorMessage);
-        toast.error(errorMessage);
-      }
+      const errorMessage = err.response?.data?.message || 'Чакырууну кабыл алууда ката кетти';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

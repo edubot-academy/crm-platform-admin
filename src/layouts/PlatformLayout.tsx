@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  User,
   ChevronDown,
   Search,
   X,
@@ -36,19 +35,15 @@ export function PlatformLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const { actions } = usePageActions();
-
-  useEffect(() => {
-    const user = authService.getCurrentUser();
-    if (user) {
-      setCurrentUser({ name: user.email.split('@')[0] || 'Админ', email: user.email });
-    }
-  }, []);
+  const authUser = authService.getCurrentUser();
+  const currentUser = authUser
+    ? { name: authUser.email.split('@')[0] || 'Админ', email: authUser.email }
+    : null;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -85,7 +80,7 @@ export function PlatformLayout() {
   }, [globalSearchOpen]);
 
   const handleLogout = () => {
-    authService.logout();
+    void authService.logout();
     navigate('/login');
   };
 
@@ -220,11 +215,11 @@ export function PlatformLayout() {
                 {userDropdownOpen && sidebarOpen && (
                   <div className="mt-2 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                     <button
-                      onClick={() => navigate('/platform/users/me')}
+                      onClick={() => navigate('/platform/settings')}
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <User className="w-4 h-4 mr-2" />
-                      Профиль
+                      <Settings className="w-4 h-4 mr-2" />
+                      Жөндөөлөр
                     </button>
                     <button
                       onClick={handleLogout}
@@ -359,11 +354,11 @@ export function PlatformLayout() {
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
                     <button
-                      onClick={() => navigate('/platform/users/me')}
+                      onClick={() => navigate('/platform/settings')}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <User className="w-4 h-4 mr-2" />
-                      Профиль
+                      <Settings className="w-4 h-4 mr-2" />
+                      Жөндөөлөр
                     </button>
                     <button
                       onClick={() => navigate('/platform/settings')}

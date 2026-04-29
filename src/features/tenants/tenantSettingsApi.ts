@@ -8,7 +8,7 @@ export interface TenantConfig {
   brandingName: string | null;
   brandingLogoUrl: string | null;
   supportEmail: string;
-  enabledModules: string[];
+  enabledModules: Record<string, boolean>;
   metadata: {
     platformNotes?: string;
     [key: string]: any;

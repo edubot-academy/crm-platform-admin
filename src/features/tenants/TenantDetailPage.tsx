@@ -68,6 +68,12 @@ export function TenantDetailPage() {
     onConfirm: () => void;
   }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
+  const enabledModuleKeys = settings?.enabledModules
+    ? Object.entries(settings.enabledModules)
+      .filter(([, enabled]) => enabled)
+      .map(([module]) => module)
+    : [];
+
   const loadTenant = async () => {
     setLoading(true);
     setError('');
@@ -77,10 +83,9 @@ export function TenantDetailPage() {
       setEditForm({
         name: data.name,
         slug: data.slug,
-        primaryEmail: data.primaryEmail || undefined,
-        planId: data.planId || undefined,
+        primaryEmail: undefined,
       });
-      setSelectedPlanId(data.planId || '');
+      setSelectedPlanId(data.plan?.id || '');
     } catch (err: any) {
       setError('Тенантты жүктөөдө ката кетти');
     } finally {
@@ -565,18 +570,6 @@ export function TenantDetailPage() {
                     onChange={(e) => setEditForm({ ...editForm, slug: e.target.value.toLowerCase() })}
                     required
                   />
-                  <Input
-                    label="Негизги email"
-                    type="email"
-                    value={editForm.primaryEmail || ''}
-                    onChange={(e) => setEditForm({ ...editForm, primaryEmail: e.target.value })}
-                  />
-                  <Input
-                    label="Тариф ID"
-                    value={editForm.planId || ''}
-                    onChange={(e) => setEditForm({ ...editForm, planId: e.target.value })}
-                    required
-                  />
                   <div className="flex justify-end space-x-3">
                     <Button type="button" variant="secondary" onClick={() => setIsEditing(false)} disabled={loading}>
                       Жокко чыгаруу
@@ -606,11 +599,7 @@ export function TenantDetailPage() {
                     </div>
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Негизги домен</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{tenant.domain || 'Жок'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Негизги email</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{tenant.primaryEmail || 'Жок'}</dd>
+                      <dd className="mt-1 text-sm text-gray-900">{tenant.primaryDomain || 'Жок'}</dd>
                     </div>
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Статус</dt>
@@ -641,8 +630,8 @@ export function TenantDetailPage() {
                 <CardContent>
                   <dl className="space-y-4">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Азыркы тариф ID</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{tenant.planId || 'Жок'}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Азыркы тариф</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{tenant.plan?.name || tenant.plan?.code || 'Жок'}</dd>
                     </div>
                   </dl>
                 </CardContent>
@@ -697,9 +686,9 @@ export function TenantDetailPage() {
               <h2 className="text-lg font-semibold text-gray-900">Азыркы тариф</h2>
             </CardHeader>
             <CardContent>
-              {tenant?.planId ? (
+              {tenant?.plan?.id ? (
                 <div className="text-sm text-gray-700">
-                  <span className="font-medium">Тариф ID:</span> {tenant.planId}
+                  <span className="font-medium">Тариф:</span> {tenant.plan.name} ({tenant.plan.code})
                 </div>
               ) : (
                 <div className="text-sm text-gray-500">Тариф белгиленген эмес</div>
@@ -883,7 +872,7 @@ export function TenantDetailPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{getUserRoleBadge(user.role)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">{getUserStatusBadge(user.isActive)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{getUserStatusBadge(user.isActive ?? false)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ky-KG') : 'Кирген эмес'}
                             </td>
@@ -1030,9 +1019,9 @@ export function TenantDetailPage() {
                   {/* Read-only enabled modules */}
                   <div className="border-t pt-6">
                     <h3 className="text-md font-semibold text-gray-900 mb-4">Модулдар</h3>
-                    {settings.enabledModules && settings.enabledModules.length > 0 ? (
+                    {enabledModuleKeys.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {settings.enabledModules.map((module) => (
+                        {enabledModuleKeys.map((module) => (
                           <Badge key={module} variant="success">
                             {module}
                           </Badge>

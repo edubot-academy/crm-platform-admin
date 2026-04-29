@@ -8,7 +8,7 @@ import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { Plus, Power, PowerOff, Users, Copy } from 'lucide-react';
+import { Plus, Power, PowerOff, Users } from 'lucide-react';
 import { platformUsersApi, type PlatformUser, type CreatePlatformUserData } from './platformUsersApi';
 import { InviteLinkBanner } from '../tenants/components/InviteLinkBanner';
 
@@ -21,9 +21,9 @@ export function PlatformUsersPage() {
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [userActionLoading, setUserActionLoading] = useState<number | null>(null);
   const [formData, setFormData] = useState<CreatePlatformUserData>({
+    name: '',
     fullName: '',
     email: '',
-    password: '',
     role: 'superadmin',
   });
   const [formError, setFormError] = useState('');
@@ -54,7 +54,7 @@ export function PlatformUsersPage() {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.fullName.trim()) return 'Аты-жөнүнү киргизиңиз';
+    if (!formData.fullName?.trim() && !formData.name?.trim()) return 'Аты-жөнүнү киргизиңиз';
     if (!formData.email.trim()) return 'Email даректин киргизиңиз';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Туура email дарек киргизиңиз';
     // Password is optional (for invite flow)
@@ -74,14 +74,15 @@ export function PlatformUsersPage() {
     setFormLoading(true);
 
     try {
-      const result = await platformUsersApi.createUser(formData);
+      const normalizedData = platformUsersApi.normalizeCreateData(formData);
+      const result = await platformUsersApi.createUser(normalizedData);
       toast.success('Колдонуучу ийгиликтүү түзүлдү');
       if (result.inviteLink) {
         setInviteLink(result.inviteLink);
         setShowInviteLink(true);
       }
       setShowCreateForm(false);
-      setFormData({ fullName: '', email: '', password: '', role: 'superadmin' });
+      setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
       loadUsers();
     } catch (err: any) {
       setFormError(err.response?.data?.message || 'Колдонуучуну түзүүдө ката кетти');
@@ -134,7 +135,11 @@ export function PlatformUsersPage() {
   };
 
   const columns = [
-    { key: 'fullName', header: 'Аты-жөнү' },
+    {
+      key: 'displayName',
+      header: 'Аты-жөнү',
+      render: (_: any, row: PlatformUser) => platformUsersApi.getDisplayName(row),
+    },
     { key: 'email', header: 'Email' },
     {
       key: 'role',
@@ -226,7 +231,7 @@ export function PlatformUsersPage() {
             <form onSubmit={handleCreateUser} className="space-y-4">
               <Input
                 label="Аты-жөнү"
-                value={formData.fullName}
+                value={formData.fullName || formData.name || ''}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 required
                 placeholder="Иван Иванов"
@@ -238,13 +243,6 @@ export function PlatformUsersPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 placeholder="admin@edubot.it.com"
-              />
-              <Input
-                label="Пароль"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Милдеттүү эмес (чакыруу агымы үчүн)"
               />
               {formError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -258,7 +256,7 @@ export function PlatformUsersPage() {
                   onClick={() => {
                     setShowCreateForm(false);
                     setFormError('');
-                    setFormData({ fullName: '', email: '', password: '', role: 'superadmin' });
+                    setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
                   }}
                   disabled={formLoading}
                 >

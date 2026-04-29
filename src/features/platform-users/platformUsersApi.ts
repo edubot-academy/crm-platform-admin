@@ -3,7 +3,8 @@ import apiClient from '../../shared/api/client';
 export interface PlatformUser {
   id: number;
   tenantId: null;
-  fullName: string;
+  name?: string;
+  fullName?: string;
   email: string;
   role: 'superadmin';
   isActive: boolean;
@@ -22,14 +23,21 @@ export interface PlatformUsersResponse {
 }
 
 export interface CreatePlatformUserData {
-  fullName: string;
+  name?: string;
+  fullName?: string;
   email: string;
-  password?: string;
   role: 'superadmin';
 }
 
 export interface UpdateUserStatusData {
   isActive: boolean;
+}
+
+export interface CreatePlatformUserResponse {
+  userId: number;
+  inviteLink: string;
+  inviteToken: string;
+  message: string;
 }
 
 export interface ResendInviteResponse {
@@ -46,18 +54,30 @@ export const platformUsersApi = {
     return response.data.items;
   },
 
+  getDisplayName(user: PlatformUser): string {
+    return user.name ?? user.fullName ?? user.email;
+  },
+
   async getMe(): Promise<PlatformUser> {
     const response = await apiClient.get<PlatformUser>('/platform/users/me');
     return response.data;
   },
 
-  async createUser(data: CreatePlatformUserData): Promise<PlatformUser> {
-    const response = await apiClient.post<PlatformUser>('/platform/users', data);
+  async createUser(data: CreatePlatformUserData): Promise<CreatePlatformUserResponse> {
+    const response = await apiClient.post<CreatePlatformUserResponse>('/platform/users', data);
     return response.data;
   },
 
-  async updateUserStatus(userId: number, data: UpdateUserStatusData): Promise<PlatformUser> {
-    const response = await apiClient.patch<PlatformUser>(`/platform/users/${userId}/status`, data);
+  normalizeCreateData(data: CreatePlatformUserData): CreatePlatformUserData {
+    // Normalize name/fullName field - use name if provided, otherwise fullName
+    return {
+      ...data,
+      name: data.name || data.fullName,
+    };
+  },
+
+  async updateUserStatus(userId: number, data: UpdateUserStatusData): Promise<{ message: string }> {
+    const response = await apiClient.patch<{ message: string }>(`/platform/users/${userId}/status`, data);
     return response.data;
   },
 

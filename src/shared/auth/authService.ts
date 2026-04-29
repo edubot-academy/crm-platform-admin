@@ -25,9 +25,11 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
 
 export interface JWTPayload {
   sub: string;
+  id?: number;
   email: string;
   role: string;
   companyId?: string | null;
+  tenantId?: string | null;
   iat?: number;
   exp?: number;
 }
@@ -51,7 +53,7 @@ function decodeJWT(token: string): JWTPayload | null {
         .join('')
     );
     return JSON.parse(jsonPayload);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -67,8 +69,10 @@ export const authService = {
       throw new Error(passwordValidation.error || 'Invalid password');
     }
 
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    tokenStore.setToken(response.data.accessToken);
+    const response = await apiClient.post<AuthResponse>('/auth/login', credentials, {
+      headers: { 'X-Company-Id': 'platform' },
+    });
+    tokenStore.setTokens(response.data.accessToken, response.data.refreshToken);
 
     // Decode user info from JWT
     const user = decodeJWT(response.data.accessToken);
@@ -79,8 +83,19 @@ export const authService = {
     };
   },
 
-  logout(): void {
-    tokenStore.removeToken();
+  async logout(): Promise<void> {
+    const user = this.getCurrentUser();
+    const companyId = user?.tenantId ? String(user.tenantId) : 'platform';
+
+    try {
+      await apiClient.post('/auth/logout', undefined, {
+        headers: { 'X-Company-Id': companyId },
+      });
+    } catch {
+      // Local logout should still succeed even if the backend token revoke fails.
+    } finally {
+      tokenStore.removeToken();
+    }
   },
 
   getCurrentUser(): JWTPayload | null {
@@ -91,6 +106,10 @@ export const authService = {
 
   isSuperAdmin(): boolean {
     const user = this.getCurrentUser();
-    return user?.role === 'superadmin' && (!user.companyId || user.companyId === null);
+    return (
+      user?.role === 'superadmin' &&
+      (!user.tenantId || user.tenantId === null) &&
+      (!user.companyId || user.companyId === null)
+    );
   },
 };

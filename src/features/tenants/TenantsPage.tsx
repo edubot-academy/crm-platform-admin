@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
 import { Link } from 'react-router-dom';
 import { Button } from '../../shared/components/Button';
 import { Card, CardContent } from '../../shared/components/Card';
@@ -7,7 +8,7 @@ import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { Plus, Search, ChevronLeft, ChevronRight, Users, Trash2, ChevronDown, Filter, LayoutGrid, List, MoreVertical, Edit, Eye } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Users, ChevronDown, Filter, LayoutGrid, List, MoreVertical, Eye } from 'lucide-react';
 import { tenantApi, type TenantSummary, type GetTenantsParams } from './tenantApi';
 
 export function TenantsPage() {
@@ -16,12 +17,10 @@ export function TenantsPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedTenants, setSelectedTenants] = useState<TenantSummary[]>([]);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [actionDropdownOpen, setActionDropdownOpen] = useState<number | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState({
-    planId: '',
     createdAtFrom: '',
     createdAtTo: '',
   });
@@ -32,65 +31,94 @@ export function TenantsPage() {
     totalPages: 0,
   });
 
-  useEffect(() => {
-    loadTenants();
-  }, [pagination.page, statusFilter]);
+  const buildTenantParams = (): GetTenantsParams => {
+    const params: GetTenantsParams = {
+      page: pagination.page,
+      limit: pagination.limit,
+    };
+
+    if (search) params.search = search;
+    if (statusFilter) params.status = statusFilter;
+    if (advancedFilters.createdAtFrom) params.createdAtFrom = advancedFilters.createdAtFrom;
+    if (advancedFilters.createdAtTo) params.createdAtTo = advancedFilters.createdAtTo;
+
+    return params;
+  };
 
   const loadTenants = async () => {
     setLoading(true);
     setError('');
     try {
-      const params: GetTenantsParams = {
-        page: pagination.page,
-        limit: pagination.limit,
-      };
-      if (search) params.search = search;
-      if (statusFilter) params.status = statusFilter;
-
-      const response = await tenantApi.getTenants(params);
-      setTenants(response);
-      setPagination({
-        ...pagination,
-        total: response.length,
-        totalPages: 1,
-      });
-    } catch (err: any) {
-      setError('Тенанттарды жүктөөдө ката кетти');
+      const response = await tenantApi.getTenants(buildTenantParams());
+      setTenants(response.items);
+      setPagination((current) => ({
+        ...current,
+        total: response.total,
+        totalPages: response.totalPages,
+      }));
+    } catch (error) {
+      setError(isAxiosError(error) ? error.response?.data?.message || 'Тенанттарды жүктөөдө ката кетти' : 'Тенанттарды жүктөөдө ката кетти');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        setLoading(true);
+        setError('');
+        try {
+          const params: GetTenantsParams = {
+            page: pagination.page,
+            limit: pagination.limit,
+          };
+
+          if (search) params.search = search;
+          if (statusFilter) params.status = statusFilter;
+          if (advancedFilters.createdAtFrom) params.createdAtFrom = advancedFilters.createdAtFrom;
+          if (advancedFilters.createdAtTo) params.createdAtTo = advancedFilters.createdAtTo;
+
+          const response = await tenantApi.getTenants(params);
+          setTenants(response.items);
+          setPagination((current) => ({
+            ...current,
+            total: response.total,
+            totalPages: response.totalPages,
+          }));
+        } catch (error) {
+          setError(isAxiosError(error) ? error.response?.data?.message || 'Тенанттарды жүктөөдө ката кетти' : 'Тенанттарды жүктөөдө ката кетти');
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pagination.page, pagination.limit, search, statusFilter, advancedFilters.createdAtFrom, advancedFilters.createdAtTo]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPagination({ ...pagination, page: 1 });
-    loadTenants();
+    setPagination((current) => ({ ...current, page: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
-    setPagination({ ...pagination, page: newPage });
-  };
-
-  const handleSelectionChange = (selected: TenantSummary[]) => {
-    setSelectedTenants(selected);
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedTenants.length === 0) return;
-    // TODO: Implement bulk delete API call
-    console.log('Deleting tenants:', selectedTenants.map(t => t.id));
-    setSelectedTenants([]);
+    setPagination((current) => ({ ...current, page: newPage }));
   };
 
   const columns = [
     { key: 'name', header: 'Компания' },
     { key: 'slug', header: 'Слаг' },
     {
-      key: 'domain',
+      key: 'primaryDomain',
       header: 'Негизги домен',
       render: (value: string | null) => value || 'Жок',
     },
-    { key: 'planId', header: 'Тариф ID' },
+    {
+      key: 'plan',
+      header: 'Тариф',
+      render: (value: TenantSummary['plan']) => value?.name || value?.code || 'Жок',
+    },
     {
       key: 'status',
       header: 'Статус',
@@ -108,7 +136,7 @@ export function TenantsPage() {
     {
       key: 'actions',
       header: 'Аракеттер',
-      render: (_: any, row: TenantSummary) => (
+      render: (_value: unknown, row: TenantSummary) => (
         <div className="relative">
           <button
             onClick={() => setActionDropdownOpen(actionDropdownOpen === row.id ? null : row.id)}
@@ -127,25 +155,6 @@ export function TenantsPage() {
                 <Eye className="w-4 h-4 mr-2" />
                 Көрүү
               </Link>
-              <Link
-                to={`/platform/tenants/${row.id}/edit`}
-                onClick={() => setActionDropdownOpen(null)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Оңдоо
-              </Link>
-              <button
-                onClick={() => {
-                  // TODO: Implement delete
-                  console.log('Delete tenant:', row.id);
-                  setActionDropdownOpen(null);
-                }}
-                className="flex items-center w-full px-4 py-2 text-sm text-semantic-error-600 hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Өчүрүү
-              </button>
             </div>
           )}
         </div>
@@ -193,33 +202,6 @@ export function TenantsPage() {
 
       <Card>
         <CardContent className="p-6">
-          {/* Bulk Action Toolbar */}
-          {selectedTenants.length > 0 && (
-            <div className="flex items-center justify-between bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-primary-900">
-                  {selectedTenants.length} тенант тандалды
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  leftIcon={Trash2}
-                >
-                  Өчүрүү
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedTenants([])}
-                >
-                  Жокко чыгаруу
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Search and Filter */}
           <div className="flex gap-4 mb-6">
@@ -258,15 +240,7 @@ export function TenantsPage() {
           {/* Advanced Filter Panel */}
           {filterPanelOpen && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Тариф ID</label>
-                  <Input
-                    placeholder="Тариф ID..."
-                    value={advancedFilters.planId}
-                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, planId: e.target.value })}
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Түзүлгөн күнү (башы)</label>
                   <Input
@@ -288,13 +262,21 @@ export function TenantsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setAdvancedFilters({ planId: '', createdAtFrom: '', createdAtTo: '' });
+                    setAdvancedFilters({ createdAtFrom: '', createdAtTo: '' });
+                    setPagination((current) => ({ ...current, page: 1 }));
                     setFilterPanelOpen(false);
+                    void loadTenants();
                   }}
                 >
                   Тазалоо
                 </Button>
-                <Button onClick={() => setFilterPanelOpen(false)}>
+                <Button
+                  onClick={() => {
+                    setPagination((current) => ({ ...current, page: 1 }));
+                    setFilterPanelOpen(false);
+                    void loadTenants();
+                  }}
+                >
                   Колдонуу
                 </Button>
               </div>
@@ -319,8 +301,6 @@ export function TenantsPage() {
                 <Table
                   columns={columns}
                   data={tenants}
-                  selectable
-                  onSelectionChange={handleSelectionChange}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -355,11 +335,11 @@ export function TenantsPage() {
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-500">Домен:</span>
-                            <span className="text-gray-900">{tenant.domain || 'Жок'}</span>
+                            <span className="text-gray-900">{tenant.primaryDomain || 'Жок'}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-500">Тариф ID:</span>
-                            <span className="text-gray-900">{tenant.planId}</span>
+                            <span className="text-gray-500">Тариф:</span>
+                            <span className="text-gray-900">{tenant.plan?.name || tenant.plan?.code || 'Жок'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">Түзүлгөн:</span>

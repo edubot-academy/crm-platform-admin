@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-29
+
+### Added
+
+#### Platform Tenant Onboarding
+
+- Added one-step tenant onboarding flow in `CreateTenantPage`
+- Added onboarding result view with tenant, admin, plan, feature, and module summaries
+- Added frontend support for backend `OnboardTenantResponse` and `OnboardTenantData` contracts
+
+### Changed
+- Updated tenant list page to use paginated tenant API responses with `items`, `total`, `page`, `limit`, and `totalPages`
+- Updated tenant list and tenant detail views to use `primaryDomain` and structured `plan` objects instead of older raw tenant fields
+- Updated tenant settings UI to consume `enabledModules` as a boolean map
+- Updated platform users UI to use invite-first creation semantics and current backend `name` / `fullName` response shape
+- Updated auth/session handling to use session-backed access and refresh tokens with automatic refresh support
+- Updated logout flow to send the correct platform or tenant context when revoking sessions
+- Updated invite acceptance flow to pass tenant context from invite links when available
+- Updated tenant detail editing flow so plan assignment stays on the dedicated plan endpoint instead of the generic tenant update form
+
+### Fixed
+- Fixed tenant table rendering against the current `/platform/tenants` response contract
+- Fixed tenant search, status filter, created-date filter, and pagination behavior in the platform admin tenant list
+- Fixed tenant settings module rendering when backend returns boolean module maps
+- Fixed onboarding feedback so invite-delivery failures render as warning states instead of green success states
+- Fixed platform user display-name rendering for current backend responses
+- Fixed stale invite acceptance error messaging that still implied the backend flow was not implemented
+
 ## [0.5.0] - 2026-04-28
 
 ### Added

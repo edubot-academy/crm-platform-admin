@@ -4,32 +4,44 @@ export interface TenantSettings {
   [key: string]: string | number | boolean | null;
 }
 
+export interface TenantPlan {
+  id: string | null;
+  name: string | null;
+  code: string | null;
+}
+
 export interface TenantSummary {
   id: number;
   name: string;
   slug: string;
   status: 'active' | 'inactive' | 'suspended' | 'archived';
-  planId: string | null;
-  primaryEmail: string | null;
-  domain: string | null;
+  primaryDomain: string | null;
+  plan: TenantPlan;
+  features: Record<string, boolean> | null;
+  modules: Record<string, boolean> | null;
   createdAt: string;
   updatedAt: string;
-  isActive: boolean;
-  settings: TenantSettings;
 }
 
 export interface Tenant {
   id: number;
   name: string;
   slug: string;
-  primaryEmail: string | null;
-  domain: string | null;
+  primaryDomain: string | null;
   status: 'active' | 'inactive' | 'suspended' | 'archived';
-  planId: string | null;
+  plan: TenantPlan;
+  features: Record<string, boolean> | null;
+  modules: Record<string, boolean> | null;
   createdAt: string;
   updatedAt: string;
-  isActive: boolean;
-  settings: TenantSettings;
+}
+
+export interface TenantsResponse {
+  items: TenantSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface GetTenantsParams {
@@ -37,14 +49,19 @@ export interface GetTenantsParams {
   limit?: number;
   search?: string;
   status?: string;
+  createdAtFrom?: string;
+  createdAtTo?: string;
 }
 
 export interface CreateTenantData {
   name: string;
   slug: string;
-  primaryEmail: string;
-  planId: string;
+  primaryEmail?: string;
+  planId?: string;
   status: 'active' | 'inactive' | 'suspended' | 'archived';
+  adminName?: string;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 export interface UpdateTenantData {
@@ -54,9 +71,55 @@ export interface UpdateTenantData {
   planId?: string;
 }
 
+export interface OnboardTenantAdmin {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  inviteLink?: string | null;
+}
+
+export interface OnboardTenantPlan {
+  id: string | null;
+  name: string | null;
+  code: string | null;
+}
+
+export interface OnboardTenantResponse {
+  tenantId: number;
+  tenantName: string;
+  tenantSlug: string;
+  tenantStatus: 'active' | 'inactive' | 'suspended' | 'archived';
+  primaryDomain: string;
+  admin: OnboardTenantAdmin;
+  plan: OnboardTenantPlan;
+  features: Record<string, boolean> | null;
+  modules: Record<string, boolean> | null;
+  message: string;
+  success: boolean;
+  createdAt: string;
+}
+
+export interface OnboardTenantData {
+  name: string;
+  slug: string;
+  adminFullName: string;
+  adminEmail: string;
+  adminRole?: 'admin' | 'manager';
+  planId?: string;
+  status?: 'active' | 'inactive' | 'suspended' | 'archived';
+  industry?: string;
+  brandColor?: string;
+  logoUrl?: string;
+  defaultLanguage?: string;
+  timezone?: string;
+  currency?: string;
+}
+
 export const tenantApi = {
-  async getTenants(params: GetTenantsParams = {}): Promise<TenantSummary[]> {
-    const response = await apiClient.get<TenantSummary[]>('/platform/tenants', { params });
+  async getTenants(params: GetTenantsParams = {}): Promise<TenantsResponse> {
+    const response = await apiClient.get<TenantsResponse>('/platform/tenants', { params });
     return response.data;
   },
 
@@ -80,7 +143,8 @@ export const tenantApi = {
     return response.data;
   },
 
-  async deleteTenant(tenantId: string): Promise<void> {
-    await apiClient.delete(`/platform/tenants/${tenantId}`);
+  async onboardTenant(data: OnboardTenantData): Promise<OnboardTenantResponse> {
+    const response = await apiClient.post<OnboardTenantResponse>('/platform/tenants/onboard', data);
+    return response.data;
   },
 };

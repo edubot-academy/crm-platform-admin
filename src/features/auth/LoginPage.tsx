@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { authService } from '../../shared/auth/authService';
 import { Button } from '../../shared/components/Button';
 import { Input } from '../../shared/components/Input';
@@ -21,15 +22,20 @@ export function LoginPage() {
       const response = await authService.login({ email, password });
 
       // Check if user is superadmin and has no company/tenant
-      if (!response.user || response.user.role !== 'superadmin' || response.user.companyId) {
-        authService.logout();
+      if (
+        !response.user ||
+        response.user.role !== 'superadmin' ||
+        response.user.tenantId ||
+        response.user.companyId
+      ) {
+        void authService.logout();
         setError('Бул платформа админ панелине кирүүгө уруксатыңыз жок');
         return;
       }
 
       navigate('/platform');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Кирүүдө ката кетти');
+    } catch (error) {
+      setError(isAxiosError(error) ? error.response?.data?.message || 'Кирүүдө ката кетти' : 'Кирүүдө ката кетти');
     } finally {
       setLoading(false);
     }
