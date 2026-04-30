@@ -110,6 +110,19 @@ export function DemoRequestsPage() {
       render: (value: unknown) => (value as string | null) || '—',
     },
     {
+      key: 'message',
+      header: 'Билдирүү',
+      render: (value: unknown) => {
+        const msg = value as string | null;
+        if (!msg) return '—';
+        return (
+          <div className="max-w-xs truncate" title={msg}>
+            {msg}
+          </div>
+        );
+      },
+    },
+    {
       key: 'status',
       header: 'Статус',
       render: (value: unknown) => {
@@ -191,7 +204,7 @@ export function DemoRequestsPage() {
       <Card className="app-surface">
         <CardContent className="p-6">
           {loading ? (
-            <SkeletonTable rows={5} columns={6} />
+            <SkeletonTable rows={5} columns={7} />
           ) : error ? (
             <Alert variant="error">{error}</Alert>
           ) : requests.length === 0 ? (
