@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-30
+
+### Added
+
+#### Comprehensive Style & Architectural Update
+
+**New Shared Components**:
+- Created `InviteLinkBanner` component for reusable invite link display with copy-to-clipboard
+- Created `CreateUserModal` component for tenant user creation with form validation
+- Created `SectionIntro` component for consistent section headers with descriptions
+- Created `FilterBar` and `FilterBarItem` components for responsive filter layouts
+- Created `FormModal` component with focus trapping, keyboard navigation, and accessibility
+- Created `Switch` component for toggle switches with aria-label support
+- Created `LoadingSpinner` component with size variants
+- Created `SkeletonCard` and `SkeletonTable` components for loading states
+- Created `EmptyState` component for no-data states with optional actions
+- Created `Alert` component with success, error, warning, and info variants
+- Created `ErrorBoundary` component for global error handling
+
+**Enhanced Shared Components**:
+- Enhanced `Button` with loading states, icon support, focus rings, and EduBot brand colors
+- Enhanced `Card` with elevation system, hoverable states, and refined shadows
+- Enhanced `Badge` with colorblind-friendly icons and semantic variants
+- Enhanced `Input` with floating labels, helper text, character counts, and focus states
+- Enhanced `Select` with keyboard navigation, search, accessibility, and custom styling
+- Enhanced `Table` with sticky headers, row selection, sorting, and ARIA attributes
+- Enhanced `ConfirmDialog` with focus trapping, Escape key support, and accessibility
+- Enhanced `PageHeader` with actions area for page-specific buttons
+- Enhanced `PageActionsContext` for dynamic page header actions
+
+**Feature Page Updates**:
+- Updated `PlatformDashboardPage` with new card layout, stat cards, and export functionality
+- Updated `TenantsPage` with search, filters, pagination, table/card views, and empty states
+- Updated `TenantDetailPage` with tabbed interface, modals, and improved layout
+- Updated `PlansPage` with visual feature/limit editors, comparison table, and card views
+- Updated `PlatformUsersPage` with invite link display, user management, and empty states
+- Updated `PlatformFeatureFlagsPage` with search, category filtering, and toggle switches
+- Updated `AuditLogsPage` with filters, pagination, and log detail expansion
+- Updated `DemoRequestsPage` with search, status filters, and inline status updates
+- Updated `PlatformSettingsPage` with form layout and sectioned settings
+- Updated `InviteAcceptPage` with password strength indicator and validation
+- Updated `LoginPage` with improved layout and error handling
+
+**Layout & Navigation**:
+- Updated `PlatformLayout` with responsive sidebar, topbar, and user dropdown
+- Updated router with lazy loading for all routes and error boundaries
+- Added `/accept-invite` public route for invite acceptance
+
+**Design System**:
+- Expanded Tailwind config with EduBot brand colors (navy, orange, green, teal)
+- Added custom shadows (`shadow-edubot-card`, `shadow-edubot-hover`, `shadow-edubot-soft`)
+- Added custom border radius tokens (`rounded-panel`, `rounded-[1.5rem]`, etc.)
+- Added custom spacing scale and animation utilities
+- Added surface colors (`edubot-surface`, `edubot-surfaceAlt`)
+- Added semantic color palette for success, warning, error, info states
+
+**API Updates**:
+- Updated `tenantSettingsApi` with current backend contract for tenant settings
+- Updated `tenantUsersApi` with `isActive` boolean normalization
+- Updated `platformUsersApi` with `name`/`fullName` response shape handling
+
+### Changed
+
+- **All feature pages**: Migrated to new shared components and design system
+- **All shared components**: Updated to use EduBot brand colors and design tokens
+- **Layout**: Improved responsive behavior and mobile navigation
+- **Styling**: Consistent rounded corners, shadows, and spacing throughout
+- **Accessibility**: Added ARIA labels, focus management, and keyboard navigation
+- **Loading states**: Replaced hardcoded text with skeleton components
+- **Empty states**: Replaced hardcoded text with EmptyState components
+- **Error handling**: Added ErrorBoundary and improved error displays
+- **Typography**: Consistent font sizes, weights, and colors
+- **Color usage**: Replaced hardcoded colors with design token classes
+
+### Fixed
+
+- Fixed tenant table rendering against current `/platform/tenants` response contract
+- Fixed tenant search, status filter, and pagination behavior
+- Fixed tenant settings module rendering for boolean module maps
+- Fixed platform user display-name rendering for current backend responses
+- Fixed stale invite acceptance error messaging
+- Fixed onboarding feedback for invite-delivery failures
+- Fixed duplicate Tailwind CSS utility class in `index.css`
+- Fixed mixed-language toast message in `useTenantDetailPage.ts` (`белгилendi` → `белгиленди`)
+- Removed unused `import React from 'react'` in `Badge.tsx`
+- Removed empty component subdirectories under `src/shared/components/`
+
 ## [0.6.0] - 2026-04-29
 
 ### Added

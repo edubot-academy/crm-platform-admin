@@ -11,7 +11,7 @@ export interface TenantConfig {
   enabledModules: Record<string, boolean>;
   metadata: {
     platformNotes?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | null | undefined;
   };
   createdAt: string;
   updatedAt: string;
@@ -24,7 +24,7 @@ export interface UpdateTenantConfigDto {
   supportEmail?: string;
   metadata?: {
     platformNotes?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | null | undefined;
   };
 }
 

@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
@@ -18,30 +20,34 @@ export function Input({
   value,
   ...props
 }: InputProps) {
+  const generatedId = useId();
+  const inputId = props.id ?? generatedId;
   const charCount = typeof value === 'string' ? value.length : 0;
   const hasValue = value !== undefined && value !== '';
 
   return (
     <div className="w-full">
       {label && !floating && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-edubot-dark">
           {label}
         </label>
       )}
       <div className="relative">
         {floating && (
           <label
+            htmlFor={inputId}
             className={`absolute left-3 transition-all duration-200 pointer-events-none ${hasValue || props.placeholder
-                ? '-top-2.5 left-2 text-xs bg-white px-1 text-primary-600'
-                : 'top-2 text-sm text-gray-500'
+                ? '-top-2.5 left-3 text-xs bg-white px-1 text-primary-600'
+                : 'top-3 text-sm text-edubot-muted'
               }`}
           >
             {label}
           </label>
         )}
         <input
-          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${error ? 'border-semantic-error-500 focus:ring-semantic-error-500' : ''
-            } ${floating ? 'pt-3' : ''} ${className}`}
+          id={inputId}
+          className={`dashboard-field ${error ? 'border-semantic-error-500 focus:border-semantic-error-500 focus:ring-semantic-error-100 hover:border-semantic-error-400' : ''
+            } ${floating ? 'pt-5' : ''} ${className}`}
           value={value}
           maxLength={maxLength}
           {...props}
@@ -54,11 +60,11 @@ export function Input({
               <p className="text-sm text-semantic-error-600">{error}</p>
             )}
             {!error && helperText && (
-              <p className="text-sm text-gray-500">{helperText}</p>
+              <p className="text-sm text-edubot-muted">{helperText}</p>
             )}
           </div>
           {showCharCount && maxLength && (
-            <p className="text-xs text-gray-400 ml-2">
+            <p className="ml-2 text-xs text-edubot-muted/80">
               {charCount}/{maxLength}
             </p>
           )}

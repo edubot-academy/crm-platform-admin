@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import toast from 'react-hot-toast';
+import { Alert } from '../../shared/components/Alert';
 import { Button } from '../../shared/components/Button';
-import { Card, CardContent, CardHeader } from '../../shared/components/Card';
+import { Card, CardContent } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
 import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
+import { FormModal } from '../../shared/components/FormModal';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { PageHeader } from '../../shared/components/PageHeader';
 import { Plus, Power, PowerOff, Users } from 'lucide-react';
 import { platformUsersApi, type PlatformUser, type CreatePlatformUserData } from './platformUsersApi';
 import { InviteLinkBanner } from '../tenants/components/InviteLinkBanner';
@@ -35,28 +39,32 @@ export function PlatformUsersPage() {
     onConfirm: () => void;
   }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await platformUsersApi.getUsers();
       setUsers(data);
-    } catch (err: any) {
-      setError('Платформа колдонуучуларын жүктөөдө ката кетти');
+    } catch (err: unknown) {
+      setError(isAxiosError(err) ? err.response?.data?.message || 'Платформа админдерин жүктөөдө ката кетти' : 'Платформа админдерин жүктөөдө ката кетти');
       console.error('Failed to load platform users:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadUsers]);
 
   const validateForm = (): string | null => {
-    if (!formData.fullName?.trim() && !formData.name?.trim()) return 'Аты-жөнүнү киргизиңиз';
-    if (!formData.email.trim()) return 'Email даректин киргизиңиз';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Туура email дарек киргизиңиз';
+    if (!formData.fullName?.trim() && !formData.name?.trim()) return 'Аты-жөнүн киргизиңиз';
+    if (!formData.email.trim()) return 'Email дарегин киргизиңиз';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Туура email дарегин киргизиңиз';
     // Password is optional (for invite flow)
     return null;
   };
@@ -76,17 +84,18 @@ export function PlatformUsersPage() {
     try {
       const normalizedData = platformUsersApi.normalizeCreateData(formData);
       const result = await platformUsersApi.createUser(normalizedData);
-      toast.success('Колдонуучу ийгиликтүү түзүлдү');
+      toast.success('Платформа админи ийгиликтүү түзүлдү');
       if (result.inviteLink) {
         setInviteLink(result.inviteLink);
         setShowInviteLink(true);
       }
       setShowCreateForm(false);
       setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
-      loadUsers();
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Колдонуучуну түзүүдө ката кетти');
-      toast.error(err.response?.data?.message || 'Колдонуучуну түзүүдө ката кетти');
+      void loadUsers();
+    } catch (err: unknown) {
+      const errorMessage = isAxiosError(err) ? err.response?.data?.message || 'Платформа админин түзүүдө ката кетти' : 'Платформа админин түзүүдө ката кетти';
+      setFormError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setFormLoading(false);
     }
@@ -95,16 +104,16 @@ export function PlatformUsersPage() {
   const handleStatusChange = async (userId: number, newStatus: boolean) => {
     setConfirmDialog({
       isOpen: true,
-      title: newStatus ? 'Колдонуучуну активдештирүү' : 'Колдонуучуну өчүрүү',
+      title: newStatus ? 'Админди активдештирүү' : 'Админди өчүрүү',
       message: newStatus
-        ? 'Бул колдонуучуну активдештирүүгө ишенесизби?'
-        : 'Бул колдонуучуну өчүрүүгө ишенесизби?',
+        ? 'Бул админ үчүн платформага кирүү мүмкүнчүлүгүн кайра ачасызбы?'
+        : 'Бул админ өчүрүлсө, платформага кире албай калат. Улантасызбы?',
       onConfirm: async () => {
         setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
         try {
           await platformUsersApi.updateUserStatus(userId, { isActive: newStatus });
-          toast.success(newStatus ? 'Колдонуучу активдештирилди' : 'Колдонуучу өчүрүлдү');
-          loadUsers();
+          toast.success(newStatus ? 'Админ активдештирилди' : 'Админ өчүрүлдү');
+          void loadUsers();
         } catch (error) {
           console.error('Failed to update user status:', error);
           toast.error('Статусту өзгөртүүдө ката кетти');
@@ -120,8 +129,8 @@ export function PlatformUsersPage() {
       setInviteLink(result.inviteLink);
       setShowInviteLink(true);
       toast.success('Чакыруу ийгиликтүү кайра жөнөтүлдү');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Чакырууну кайра жөнөтүүдө ката кетти');
+    } catch (err: unknown) {
+      toast.error(isAxiosError(err) ? err.response?.data?.message || 'Чакырууну кайра жөнөтүүдө ката кетти' : 'Чакырууну кайра жөнөтүүдө ката кетти');
     } finally {
       setUserActionLoading(null);
     }
@@ -138,37 +147,39 @@ export function PlatformUsersPage() {
     {
       key: 'displayName',
       header: 'Аты-жөнү',
-      render: (_: any, row: PlatformUser) => platformUsersApi.getDisplayName(row),
+      render: (_value: unknown, row: PlatformUser) => platformUsersApi.getDisplayName(row),
     },
     { key: 'email', header: 'Email' },
     {
       key: 'role',
       header: 'Роль',
-      render: (value: string) => {
-        if (value === 'superadmin') {
+      render: (value: unknown) => {
+        const role = value as string;
+        if (role === 'superadmin') {
           return <Badge variant="success">Суперадмин</Badge>;
         }
-        return <Badge variant="neutral">{value}</Badge>;
+        return <Badge variant="neutral">{role}</Badge>;
       },
     },
     {
       key: 'isActive',
       header: 'Статус',
-      render: (value: boolean) => {
-        const variant = value ? 'success' : 'neutral';
-        const label = value ? 'Активдүү' : 'Өчүрүлгөн';
+      render: (value: unknown) => {
+        const isActive = value as boolean;
+        const variant = isActive ? 'success' : 'neutral';
+        const label = isActive ? 'Активдүү' : 'Өчүрүлгөн';
         return <Badge variant={variant}>{label}</Badge>;
       },
     },
     {
       key: 'createdAt',
       header: 'Түзүлгөн күнү',
-      render: (value: string) => new Date(value).toLocaleDateString('ky-KG'),
+      render: (value: unknown) => new Date(value as string).toLocaleDateString('ky-KG'),
     },
     {
       key: 'actions',
       header: 'Аракеттер',
-      render: (_: any, row: PlatformUser) => (
+      render: (_value: unknown, row: PlatformUser) => (
         <div className="flex gap-2">
           <Button
             variant="secondary"
@@ -176,7 +187,7 @@ export function PlatformUsersPage() {
             onClick={() => handleResendInvite(row.id)}
             disabled={userActionLoading === row.id}
           >
-            {userActionLoading === row.id ? 'Күтүүдө...' : 'Чакыруу жөнөтүү'}
+            {userActionLoading === row.id ? 'Күтүлүүдө...' : 'Чакыруу жөнөтүү'}
           </Button>
           {!row.isActive ? (
             <Button
@@ -184,7 +195,7 @@ export function PlatformUsersPage() {
               size="sm"
               onClick={() => handleStatusChange(row.id, true)}
               title="Активдештирүү"
-              aria-label="Колдонуучуну активдештирүү"
+              aria-label="Админди активдештирүү"
             >
               <Power className="w-4 h-4" />
             </Button>
@@ -194,7 +205,7 @@ export function PlatformUsersPage() {
               size="sm"
               onClick={() => handleStatusChange(row.id, false)}
               title="Өчүрүү"
-              aria-label="Колдонуучуну өчүрүү"
+              aria-label="Админди өчүрүү"
             >
               <PowerOff className="w-4 h-4" />
             </Button>
@@ -206,13 +217,16 @@ export function PlatformUsersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Платформа колдонуучулары</h1>
-        <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Жаңы колдонуучу
-        </Button>
-      </div>
+      <PageHeader
+        title="Платформа админдери"
+        description="Суперадминдерди түзүңүз, чакырууларды кайра жөнөтүңүз жана платформага кирүү мүмкүнчүлүгүн борбордон башкарыңыз."
+        actions={(
+          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Жаңы админ
+          </Button>
+        )}
+      />
 
       {showInviteLink && inviteLink && (
         <InviteLinkBanner
@@ -222,71 +236,70 @@ export function PlatformUsersPage() {
         />
       )}
 
-      {showCreateForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Жаңы суперадмин түзүү</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <Input
-                label="Аты-жөнү"
-                value={formData.fullName || formData.name || ''}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                required
-                placeholder="Иван Иванов"
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                placeholder="admin@edubot.it.com"
-              />
-              {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {formError}
-                </div>
-              )}
-              <div className="flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setFormError('');
-                    setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
-                  }}
-                  disabled={formLoading}
-                >
-                  Жокко чыгаруу
-                </Button>
-                <Button type="submit" disabled={formLoading}>
-                  {formLoading ? 'Түзүү...' : 'Түзүү'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <FormModal
+        isOpen={showCreateForm}
+        title="Жаңы суперадмин түзүү"
+        description="Платформага жаңы суперадмин кошуп, чакыруу аркылуу жеткиликтүүлүк бериңиз."
+        maxWidthClassName="max-w-xl"
+        onClose={() => {
+          setShowCreateForm(false);
+          setFormError('');
+          setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
+        }}
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <Input
+            label="Аты-жөнү"
+            value={formData.fullName || formData.name || ''}
+            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            required
+            placeholder="Иван Иванов"
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+            placeholder="admin@edubot.it.com"
+          />
+          {formError && <Alert variant="error">{formError}</Alert>}
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowCreateForm(false);
+                setFormError('');
+                setFormData({ name: '', fullName: '', email: '', role: 'superadmin' });
+              }}
+              disabled={formLoading}
+            >
+              Жокко чыгаруу
+            </Button>
+            <Button type="submit" disabled={formLoading}>
+              {formLoading ? 'Түзүү...' : 'Түзүү'}
+            </Button>
+          </div>
+        </form>
+      </FormModal>
 
-      <Card>
+      <Card className="app-surface">
         <CardContent className="p-6">
           {loading ? (
             <SkeletonTable rows={5} columns={6} />
           ) : error ? (
-            <div className="text-center py-8 text-red-500">{error}</div>
+            <Alert variant="error">{error}</Alert>
           ) : users.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="Платформа колдонуучулары табылган жок"
-              description="Платформада колдонуучулар жок. Жаңы суперадмин түзүңүз."
-              actionText="Жаңы колдонуучу"
+              title="Платформа админдери табылган жок"
+              description="Платформада админдер жок. Жаңы суперадмин түзүңүз."
+              actionText="Жаңы админ"
               onAction={() => setShowCreateForm(true)}
             />
           ) : (
-            <Table columns={columns} data={users} />
+            <Table columns={columns} data={users} rowKey="id" />
           )}
         </CardContent>
       </Card>

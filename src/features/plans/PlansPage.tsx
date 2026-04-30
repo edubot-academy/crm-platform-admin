@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
 import toast from 'react-hot-toast';
+import { Alert } from '../../shared/components/Alert';
 import { Button } from '../../shared/components/Button';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
+import { FormModal } from '../../shared/components/FormModal';
 import { Input } from '../../shared/components/Input';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { SectionIntro } from '../../shared/components/SectionIntro';
 import { Badge } from '../../shared/components/Badge';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { SkeletonCard } from '../../shared/components/SkeletonCard';
@@ -62,28 +67,40 @@ export function PlansPage() {
     onConfirm: () => void;
   }>({ isOpen: false, title: '', message: '', onConfirm: () => { } });
 
-  useEffect(() => {
-    loadPlans();
-  }, []);
-
   const loadPlans = async () => {
     setLoading(true);
     setError('');
     try {
       const data = await plansApi.getPlans();
       setPlans(data);
-    } catch (err: any) {
-      setError('Тарифтерди жүктөөдө ката кетти');
+    } catch (err: unknown) {
+      setError(isAxiosError(err) ? err.response?.data?.message || 'Тарифтерди жүктөөдө ката кетти' : 'Тарифтерди жүктөөдө ката кетти');
       console.error('Failed to load plans:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    void (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await plansApi.getPlans();
+        setPlans(data);
+      } catch (err: unknown) {
+        setError(isAxiosError(err) ? err.response?.data?.message || 'Тарифтерди жүктөөдө ката кетти' : 'Тарифтерди жүктөөдө ката кетти');
+        console.error('Failed to load plans:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   const validateForm = (): string | null => {
     if (!formData.name.trim()) return 'Тарифтин аталышын киргизиңиз';
     if (!formData.code.trim()) return 'Кодду киргизиңиз';
-    if (!/^[a-z0-9-]+$/.test(formData.code)) return 'Код төмөнкү регистрдеги латин ариптеринен, сандардан жана тиркемеден турушу керек';
+    if (!/^[a-z0-9-]+$/.test(formData.code)) return 'Код кичине латин тамгаларынан, сандардан жана дефистен турушу керек';
     return null;
   };
 
@@ -104,10 +121,11 @@ export function PlansPage() {
       toast.success('Тариф ийгиликтүү түзүлдү');
       setShowCreateForm(false);
       resetForm();
-      loadPlans();
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Тарифти түзүүдө ката кетти');
-      toast.error(err.response?.data?.message || 'Тарифти түзүүдө ката кетти');
+      void loadPlans();
+    } catch (err: unknown) {
+      const errorMessage = isAxiosError(err) ? err.response?.data?.message || 'Тарифти түзүүдө ката кетти' : 'Тарифти түзүүдө ката кетти';
+      setFormError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setFormLoading(false);
     }
@@ -133,10 +151,11 @@ export function PlansPage() {
       setShowEditForm(false);
       setEditingPlan(null);
       resetForm();
-      loadPlans();
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Тарифти жаңыртууда ката кетти');
-      toast.error(err.response?.data?.message || 'Тарифти жаңыртууда ката кетти');
+      void loadPlans();
+    } catch (err: unknown) {
+      const errorMessage = isAxiosError(err) ? err.response?.data?.message || 'Тарифти жаңыртууда ката кетти' : 'Тарифти жаңыртууда ката кетти';
+      setFormError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setFormLoading(false);
     }
@@ -147,10 +166,10 @@ export function PlansPage() {
     try {
       await plansApi.updatePlanStatus(planId, { status: newStatus });
       toast.success('Тарифтин статусу ийгиликтүү өзгөртүлдү');
-      loadPlans();
-    } catch (err: any) {
+      void loadPlans();
+    } catch (err: unknown) {
       console.error('Failed to update plan status:', err);
-      toast.error(err.response?.data?.message || 'Статусту өзгөртүүдө ката кетти');
+      toast.error(isAxiosError(err) ? err.response?.data?.message || 'Статусту өзгөртүүдө ката кетти' : 'Статусту өзгөртүүдө ката кетти');
     } finally {
       setStatusLoading(null);
     }
@@ -197,7 +216,7 @@ export function PlansPage() {
     setConfirmDialog({
       isOpen: true,
       title: 'Тарифти архивдөө',
-      message: 'Бул тарифти архивдөөгө ишенесизби?',
+      message: 'Бул тариф архивге жөнөтүлөт. Архивдеги тариф жаңы уюмдарга дайындалбайт. Улантасызбы?',
       onConfirm: () => {
         setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => { } });
         handleStatusChange(plan.id, 'archived');
@@ -205,23 +224,30 @@ export function PlansPage() {
     });
   };
 
+  const panelClasses = 'rounded-[1.5rem] border border-edubot-line/80 bg-white/70 p-4 backdrop-blur-sm';
+  const optionCardClasses = 'flex items-center gap-3 rounded-2xl border border-edubot-line bg-white/80 p-3 transition-colors hover:border-edubot-orange/40 hover:bg-edubot-orange/5';
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Тарифтер</h1>
-        <Button onClick={() => { setShowCreateForm(!showCreateForm); resetForm(); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Жаңы тариф кошуу
-        </Button>
-      </div>
+      <PageHeader
+        title="Тарифтер"
+        description="Платформадагы бардык коммерциялык пландарды, лимиттерди жана модулдук жеткиликтүүлүктү бир жерден башкарыңыз."
+        actions={(
+          <Button onClick={() => { setShowCreateForm(!showCreateForm); resetForm(); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Жаңы тариф кошуу
+          </Button>
+        )}
+      />
 
-      {showCreateForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Жаңы тариф түзүү</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+      <FormModal
+        isOpen={showCreateForm}
+        title="Жаңы тариф түзүү"
+        description="Жаңы коммерциялык планды, анын лимиттерин жана модулдарын бир терезеде аныктаңыз."
+        maxWidthClassName="max-w-4xl"
+        onClose={() => { setShowCreateForm(false); resetForm(); }}
+      >
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
               <Input
                 label="Тарифтин аталышы"
                 value={formData.name}
@@ -266,13 +292,13 @@ export function PlansPage() {
               />
 
               {/* Visual Feature Editor */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Функциялар</h3>
+              <div className={panelClasses}>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {availableFeatures.map((feature) => (
                     <label
                       key={feature.key}
-                      className="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                      className={`${optionCardClasses} cursor-pointer`}
                     >
                       <input
                         type="checkbox"
@@ -288,19 +314,19 @@ export function PlansPage() {
                         }}
                         className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                       />
-                      <span className="text-sm text-gray-700">{feature.label}</span>
+                      <span className="text-sm text-edubot-ink">{feature.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* Visual Limits Editor */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Лимиттер</h3>
+              <div className={panelClasses}>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {availableLimits.map((limit) => (
                     <div key={limit.key}>
-                      <label className="block text-sm text-gray-600 mb-1">{limit.label}</label>
+                      <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
                       <Input
                         type="number"
                         value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
@@ -324,9 +350,7 @@ export function PlansPage() {
                 </div>
               </div>
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {formError}
-                </div>
+                <Alert variant="error">{formError}</Alert>
               )}
               <div className="flex justify-end space-x-3">
                 <Button
@@ -341,18 +365,18 @@ export function PlansPage() {
                   {formLoading ? 'Сактоо...' : 'Сактоо'}
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+        </form>
+      </FormModal>
 
-      {showEditForm && editingPlan && (
-        <Card className="mb-6">
-          <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Тарифти оңдоо</h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+      <FormModal
+        isOpen={showEditForm && !!editingPlan}
+        title="Тарифти оңдоо"
+        description="Тандалган тарифтин баасын, модулдарын жана лимиттерин жаңыртыңыз."
+        maxWidthClassName="max-w-4xl"
+        onClose={() => { setShowEditForm(false); setEditingPlan(null); resetForm(); }}
+      >
+        {editingPlan && (
+          <form onSubmit={handleEditSubmit} className="space-y-4">
               <Input
                 label="Тарифтин аталышы"
                 value={formData.name}
@@ -391,13 +415,13 @@ export function PlansPage() {
               />
 
               {/* Visual Feature Editor */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Функциялар</h3>
+              <div className={panelClasses}>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {availableFeatures.map((feature) => (
                     <label
                       key={feature.key}
-                      className="flex items-center space-x-3 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                      className={`${optionCardClasses} cursor-pointer`}
                     >
                       <input
                         type="checkbox"
@@ -413,19 +437,19 @@ export function PlansPage() {
                         }}
                         className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                       />
-                      <span className="text-sm text-gray-700">{feature.label}</span>
+                      <span className="text-sm text-edubot-ink">{feature.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* Visual Limits Editor */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Лимиттер</h3>
+              <div className={panelClasses}>
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {availableLimits.map((limit) => (
                     <div key={limit.key}>
-                      <label className="block text-sm text-gray-600 mb-1">{limit.label}</label>
+                      <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
                       <Input
                         type="number"
                         value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
@@ -449,9 +473,7 @@ export function PlansPage() {
                 </div>
               </div>
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {formError}
-                </div>
+                <Alert variant="error">{formError}</Alert>
               )}
               <div className="flex justify-end space-x-3">
                 <Button
@@ -466,17 +488,16 @@ export function PlansPage() {
                   {formLoading ? 'Сактоо...' : 'Сактоо'}
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+          </form>
+        )}
+      </FormModal>
 
-      <Card>
+      <Card className="app-surface">
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Платформа тарифтери</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Тенанттар үчүн жеткиликтүү тариф пландары
-          </p>
+          <SectionIntro
+            title="Платформа тарифтери"
+            description="Уюмдар үчүн жеткиликтүү тариф пландары"
+          />
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -486,7 +507,7 @@ export function PlansPage() {
               <SkeletonCard showHeader lines={4} />
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-red-500">{error}</div>
+            <Alert variant="error">{error}</Alert>
           ) : plans.length === 0 ? (
             <EmptyState
               icon={CreditCard}
@@ -499,32 +520,32 @@ export function PlansPage() {
             <>
               {/* Plan Comparison Table */}
               <div className="mb-8 overflow-x-auto">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Тарифтерди салыштыруу</h3>
-                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                  <thead className="bg-gray-50">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Тарифтерди салыштыруу</h3>
+                <table className="min-w-full overflow-hidden rounded-[1.5rem] border border-edubot-line">
+                  <thead className="bg-edubot-surfaceAlt/80">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b">Функция/Лимит</th>
+                      <th className="border-b border-edubot-line px-4 py-3 text-left text-sm font-semibold text-edubot-dark">Функция/Лимит</th>
                       {plans.map((plan) => (
-                        <th key={plan.id} className="px-4 py-3 text-center text-sm font-semibold text-gray-900 border-b">
+                        <th key={plan.id} className="border-b border-edubot-line px-4 py-3 text-center text-sm font-semibold text-edubot-dark">
                           {plan.name}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-edubot-line bg-white/85">
                     {/* Pricing Row */}
                     <tr>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-700">Баа (айлык)</td>
+                      <td className="px-4 py-3 text-sm font-medium text-edubot-muted">Баа (айлык)</td>
                       {plans.map((plan) => (
-                        <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                        <td key={plan.id} className="px-4 py-3 text-center text-sm text-edubot-ink">
                           {plan.monthlyPrice ? `${plan.monthlyPrice} ${plan.currency}` : '-'}
                         </td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-700">Баа (жылдык)</td>
+                      <td className="px-4 py-3 text-sm font-medium text-edubot-muted">Баа (жылдык)</td>
                       {plans.map((plan) => (
-                        <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                        <td key={plan.id} className="px-4 py-3 text-center text-sm text-edubot-ink">
                           {plan.yearlyPrice ? `${plan.yearlyPrice} ${plan.currency}` : '-'}
                         </td>
                       ))}
@@ -532,15 +553,15 @@ export function PlansPage() {
                     {/* Features */}
                     {availableFeatures.map((feature) => (
                       <tr key={feature.key}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{feature.label}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-edubot-muted">{feature.label}</td>
                         {plans.map((plan) => (
                           <td key={plan.id} className="px-4 py-3 text-center">
                             {plan.features[feature.key] ? (
-                              <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                                 <Check className="w-4 h-4" />
                               </span>
                             ) : (
-                              <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 text-gray-400 rounded-full">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                                 <X className="w-4 h-4" />
                               </span>
                             )}
@@ -551,9 +572,9 @@ export function PlansPage() {
                     {/* Limits */}
                     {availableLimits.map((limit) => (
                       <tr key={limit.key}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-700">{limit.label}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-edubot-muted">{limit.label}</td>
                         {plans.map((plan) => (
-                          <td key={plan.id} className="px-4 py-3 text-sm text-center text-gray-900">
+                          <td key={plan.id} className="px-4 py-3 text-center text-sm text-edubot-ink">
                             {plan.limits[limit.key] !== undefined ? String(plan.limits[limit.key]) : '∞'}
                           </td>
                         ))}
@@ -568,22 +589,22 @@ export function PlansPage() {
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                    className="rounded-[1.75rem] border border-edubot-line bg-white/80 p-6 shadow-edubot-card transition-all duration-300 hover:-translate-y-1 hover:shadow-edubot-hover"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                          <h3 className="text-lg font-semibold text-edubot-dark">{plan.name}</h3>
                           <Badge variant="neutral">{plan.code}</Badge>
                           {getStatusBadge(plan.status)}
                         </div>
                         {plan.description && (
-                          <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
+                          <p className="mb-3 text-sm text-edubot-muted">{plan.description}</p>
                         )}
                         {/* Improved Pricing Display */}
                         <div className="flex items-center space-x-4 mb-3">
                           {plan.monthlyPrice && (
-                            <div className="bg-primary-50 border border-primary-200 rounded-lg px-4 py-2">
+                            <div className="rounded-2xl border border-primary-200 bg-primary-50 px-4 py-2">
                               <span className="text-xs text-primary-600 block">Айлык</span>
                               <span className="text-lg font-bold text-primary-900">
                                 {plan.monthlyPrice.toLocaleString()} {plan.currency}
@@ -591,7 +612,7 @@ export function PlansPage() {
                             </div>
                           )}
                           {plan.yearlyPrice && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2">
                               <span className="text-xs text-green-600 block">Жылдык</span>
                               <span className="text-lg font-bold text-green-900">
                                 {plan.yearlyPrice.toLocaleString()} {plan.currency}
@@ -599,7 +620,7 @@ export function PlansPage() {
                             </div>
                           )}
                           {plan.monthlyPrice && plan.yearlyPrice && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-edubot-muted">
                               {(plan.yearlyPrice / plan.monthlyPrice).toFixed(1)}x айлык
                             </div>
                           )}
@@ -653,17 +674,17 @@ export function PlansPage() {
                       </div>
                     </div>
                     {Object.keys(plan.features).length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">Функциялардын тизмеси:</h4>
+                      <div className="mt-4 border-t border-edubot-line pt-4">
+                        <h4 className="mb-3 text-sm font-medium text-edubot-dark">Функциялардын тизмеси:</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {availableFeatures.map((feature) => (
                             <div key={feature.key} className="flex items-center space-x-2 text-sm">
                               {plan.features[feature.key] ? (
-                                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                <Check className="h-4 w-4 flex-shrink-0 text-emerald-600" />
                               ) : (
-                                <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <X className="h-4 w-4 flex-shrink-0 text-slate-400" />
                               )}
-                              <span className={plan.features[feature.key] ? 'text-gray-900' : 'text-gray-400'}>
+                              <span className={plan.features[feature.key] ? 'text-edubot-ink' : 'text-slate-400'}>
                                 {feature.label}
                               </span>
                             </div>
@@ -672,11 +693,11 @@ export function PlansPage() {
                       </div>
                     )}
                     {Object.keys(plan.limits).length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Лимиттер:</h4>
+                      <div className="mt-4 border-t border-edubot-line pt-4">
+                        <h4 className="mb-2 text-sm font-medium text-edubot-dark">Лимиттер:</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           {Object.entries(plan.limits).map(([key, value]) => (
-                            <div key={key} className="text-gray-600">
+                            <div key={key} className="text-edubot-muted">
                               <span className="font-medium">{key}:</span> {String(value)}
                             </div>
                           ))}

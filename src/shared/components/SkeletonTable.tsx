@@ -11,20 +11,20 @@ export function SkeletonTable({
 }: SkeletonTableProps) {
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-edubot-line">
+        <thead className="bg-edubot-surfaceAlt/80">
           <tr>
             {Array.from({ length: columns }).map((_, i) => (
               <th
                 key={i}
                 className="px-6 py-3 text-left"
               >
-                <div className="h-4 bg-gray-200 rounded animate-shimmer" style={{ width: '60%' }} />
+                <div className="h-4 animate-shimmer rounded bg-slate-200" style={{ width: '60%' }} />
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-edubot-line bg-white/80">
           {Array.from({ length: rows }).map((_, rowIndex) => (
             <tr key={rowIndex}>
               {Array.from({ length: columns }).map((_, colIndex) => (
@@ -33,7 +33,7 @@ export function SkeletonTable({
                   className="px-6 py-4 whitespace-nowrap"
                 >
                   <div 
-                    className="h-4 bg-gray-200 rounded animate-shimmer" 
+                    className="h-4 animate-shimmer rounded bg-slate-200"
                     style={{ width: colIndex === columns - 1 ? '40%' : '70%' }}
                   />
                 </td>

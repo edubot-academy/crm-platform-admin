@@ -20,18 +20,18 @@ export function EmptyState({
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
       {Icon && (
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-gray-400" />
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-edubot-orange/10 ring-1 ring-edubot-orange/15">
+          <Icon className="h-8 w-8 text-edubot-orange" />
         </div>
       )}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <h3 className="mb-2 text-lg font-semibold text-edubot-dark">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-500 mb-6 max-w-sm">{description}</p>
+        <p className="mb-6 max-w-sm text-sm text-edubot-muted">{description}</p>
       )}
       {actionText && onAction && (
         <button
           onClick={onAction}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          className="dashboard-button-primary"
         >
           {actionText}
         </button>

@@ -1,16 +1,21 @@
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
 import { Button } from '../../shared/components/Button';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { Switch } from '../../shared/components/Switch';
 
 export function PlatformSettingsPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Жөндөөлөр</h1>
+      <PageHeader
+        title="Жөндөөлөр"
+        description="Платформанын жалпы аталышын, колдоо байланыштарын, коопсуздук саясаттарын жана почта жөндөөлөрүн бир жерден башкарыңыз."
+      />
 
       <div className="space-y-6">
-        <Card>
+        <Card className="app-surface">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Жалпы жөндөөлөр</h2>
+            <h2 className="text-lg font-semibold text-edubot-dark">Жалпы жөндөөлөр</h2>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -28,30 +33,28 @@ export function PlatformSettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="app-surface">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Коопсуздук</h2>
+            <h2 className="text-lg font-semibold text-edubot-dark">Коопсуздук</h2>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between rounded-[1.5rem] border border-edubot-line bg-white/75 p-4">
                 <div>
-                  <h3 className="font-medium text-gray-900">2FA талап кылынат</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Бардык суперадминдар үчүн эки фактордуу аутентификация
+                  <h3 className="font-medium text-edubot-dark">Эки факторлуу ырастоо милдеттүү</h3>
+                  <p className="mt-1 text-sm text-edubot-muted">
+                    Бардык суперадминдер үчүн эки факторлуу ырастоо талап кылынат
                   </p>
                 </div>
-                <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors" aria-label="Бул жөндөө өчүрүлгөн">
-                  <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
-                </button>
+                <Switch checked={false} ariaLabel="Бул жөндөө өчүрүлгөн" disabled />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="app-surface">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Мейл конфигурациясы</h2>
+            <h2 className="text-lg font-semibold text-edubot-dark">Почта жөндөөлөрү</h2>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -69,7 +72,7 @@ export function PlatformSettingsPage() {
                 placeholder="user@example.com"
               />
               <Input
-                label="SMTP пароль"
+                label="SMTP сырсөз"
                 type="password"
                 placeholder="••••••••"
               />

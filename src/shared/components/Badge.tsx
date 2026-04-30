@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check, AlertTriangle, X, Info, Minus } from 'lucide-react';
 
 interface BadgeProps {
@@ -10,11 +9,11 @@ interface BadgeProps {
 
 export function Badge({ children, variant = 'neutral', className = '', showIcon = true }: BadgeProps) {
   const variantStyles = {
-    success: 'bg-green-100 text-green-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    danger: 'bg-red-100 text-red-800',
-    info: 'bg-blue-100 text-blue-800',
-    neutral: 'bg-gray-100 text-gray-800',
+    success: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+    warning: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+    danger: 'bg-red-50 text-red-700 ring-1 ring-red-200',
+    info: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200',
+    neutral: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200',
   };
 
   const variantIcons = {
@@ -28,8 +27,8 @@ export function Badge({ children, variant = 'neutral', className = '', showIcon 
   const Icon = variantIcons[variant];
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variantStyles[variant]} ${className}`}>
-      {showIcon && <Icon className="w-3 h-3 mr-1" />}
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${variantStyles[variant]} ${className}`}>
+      {showIcon && <Icon className="h-3 w-3" />}
       {children}
     </span>
   );

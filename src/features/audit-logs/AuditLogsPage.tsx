@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
+import { Alert } from '../../shared/components/Alert';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
+import { FilterBar, FilterBarItem } from '../../shared/components/FilterBar';
 import { Input } from '../../shared/components/Input';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { SectionIntro } from '../../shared/components/SectionIntro';
 import { Button } from '../../shared/components/Button';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
-import { auditLogsApi, type PlatformAuditLog, type AuditLogsQueryParams } from './auditLogsApi';
+import { auditLogsApi, type PlatformAuditLog, type AuditLogsQueryParams, type AuditLogMetadata } from './auditLogsApi';
 import { FileText } from 'lucide-react';
 
 export function AuditLogsPage() {
@@ -22,44 +27,60 @@ export function AuditLogsPage() {
     dateFrom: '',
     dateTo: '',
   });
+  const [appliedFilters, setAppliedFilters] = useState<AuditLogsQueryParams>({
+    action: '',
+    targetType: '',
+    dateFrom: '',
+    dateTo: '',
+  });
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadLogs();
-  }, [page, limit]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async (nextPage: number, nextFilters: AuditLogsQueryParams) => {
     setLoading(true);
     setError('');
     try {
       const data = await auditLogsApi.getAuditLogs({
-        page,
+        page: nextPage,
         limit,
-        action: filters.action || undefined,
-        targetType: filters.targetType || undefined,
-        dateFrom: filters.dateFrom || undefined,
-        dateTo: filters.dateTo || undefined,
+        action: nextFilters.action || undefined,
+        targetType: nextFilters.targetType || undefined,
+        dateFrom: nextFilters.dateFrom || undefined,
+        dateTo: nextFilters.dateTo || undefined,
       });
       setLogs(data.items);
       setTotal(data.total);
       setTotalPages(data.totalPages);
-    } catch (err: any) {
-      setError('Маалыматты алуу мүмкүн болгон жок');
+    } catch (err: unknown) {
+      setError(isAxiosError(err) ? err.response?.data?.message || 'Маалыматты алуу мүмкүн болгон жок' : 'Маалыматты алуу мүмкүн болгон жок');
       console.error('Failed to load audit logs:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadLogs(page, appliedFilters);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [page, appliedFilters, loadLogs]);
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    loadLogs();
+    setAppliedFilters(filters);
+    if (page !== 1) {
+      setPage(1);
+    }
   };
 
   const handleResetFilters = () => {
-    setFilters({ action: '', targetType: '', dateFrom: '', dateTo: '' });
-    setPage(1);
+    const emptyFilters = { action: '', targetType: '', dateFrom: '', dateTo: '' };
+    setFilters(emptyFilters);
+    setAppliedFilters(emptyFilters);
+    if (page !== 1) {
+      setPage(1);
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -75,15 +96,15 @@ export function AuditLogsPage() {
     return <Badge variant={variant}>{action}</Badge>;
   };
 
-  const formatMetadata = (metadata: Record<string, any>) => {
+  const formatMetadata = (metadata: AuditLogMetadata) => {
     const entries = Object.entries(metadata);
     if (entries.length === 0) return null;
 
     return (
-      <div className="mt-2 text-sm text-gray-600">
+      <div className="mt-2 text-sm text-edubot-muted">
         {entries.map(([key, value]) => (
           <div key={key} className="flex">
-            <span className="font-medium text-gray-700 mr-2">{key}:</span>
+            <span className="mr-2 font-medium text-edubot-dark">{key}:</span>
             <span>{String(value)}</span>
           </div>
         ))}
@@ -93,56 +114,70 @@ export function AuditLogsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Аудит логдор</h1>
+      <PageHeader
+        title="Аудит журналдары"
+        description="Платформадагы бардык административдик аракеттерди убакыт, максат жана аткаруучу боюнча көзөмөлдөңүз."
+      />
 
-      <Card className="mb-6">
+      <Card className="mb-6 app-surface">
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Чыпкалоо</h2>
+          <SectionIntro
+            title="Чыпкалоо"
+            description="Аракет, максат түрү жана дата диапазону аркылуу аудит агымын тактаңыз."
+          />
         </CardHeader>
         <CardContent>
           <form onSubmit={handleFilterSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Аракет
-                </label>
-                <Input
-                  value={filters.action}
-                  onChange={(e) => setFilters({ ...filters, action: e.target.value })}
-                  placeholder="tenant_created"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Максат түрү
-                </label>
-                <Input
-                  value={filters.targetType}
-                  onChange={(e) => setFilters({ ...filters, targetType: e.target.value })}
-                  placeholder="Tenant"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Башталган күнү
-                </label>
-                <Input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Аякталган күнү
-                </label>
-                <Input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                />
-              </div>
-            </div>
+            <FilterBar className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <FilterBarItem>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">
+                    Аракет
+                  </label>
+                  <Input
+                    value={filters.action}
+                    onChange={(e) => setFilters({ ...filters, action: e.target.value })}
+                    placeholder="мисалы: колдонуучу түзүү"
+                  />
+                </div>
+              </FilterBarItem>
+              <FilterBarItem>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">
+                    Максат түрү
+                  </label>
+                  <Input
+                    value={filters.targetType}
+                    onChange={(e) => setFilters({ ...filters, targetType: e.target.value })}
+                    placeholder="мисалы: Колдонуучу"
+                  />
+                </div>
+              </FilterBarItem>
+              <FilterBarItem>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">
+                    Башталган күнү
+                  </label>
+                  <Input
+                    type="date"
+                    value={filters.dateFrom}
+                    onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  />
+                </div>
+              </FilterBarItem>
+              <FilterBarItem>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">
+                    Аякталган күнү
+                  </label>
+                  <Input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                  />
+                </div>
+              </FilterBarItem>
+            </FilterBar>
             <div className="flex gap-2">
               <Button type="submit">Чыпкалоо</Button>
               <Button type="button" variant="secondary" onClick={handleResetFilters}>
@@ -153,18 +188,18 @@ export function AuditLogsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="app-surface">
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Платформа аудити</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Платформадагы бардык аракеттердин жаздырылышы
-          </p>
+          <SectionIntro
+            title="Платформадагы аракеттер журналы"
+            description="Платформадагы бардык административдик аракеттер ушул жерде көрсөтүлөт."
+          />
         </CardHeader>
         <CardContent>
           {loading ? (
             <SkeletonTable rows={5} columns={6} />
           ) : error ? (
-            <div className="text-center py-8 text-red-500">{error}</div>
+            <Alert variant="error">{error}</Alert>
           ) : logs.length === 0 ? (
             <EmptyState
               icon={FileText}
@@ -173,22 +208,22 @@ export function AuditLogsPage() {
             />
           ) : (
             <>
-              <div className="mb-4 text-sm text-gray-500">
+              <div className="mb-4 text-sm text-edubot-muted">
                 Жалпы: {total} жазуу
               </div>
               <div className="space-y-4">
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="rounded-[1.5rem] border border-edubot-line bg-white/80 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-edubot-orange/30 hover:shadow-edubot-soft"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-medium text-gray-900">{log.title}</h3>
+                          <h3 className="font-medium text-edubot-dark">{log.title}</h3>
                           {getActionBadge(log.action)}
                         </div>
-                        <div className="space-y-1 text-sm text-gray-600">
+                        <div className="space-y-1 text-sm text-edubot-muted">
                           <div>
                             <span className="font-medium">Аткарган:</span> {log.actorName} ({log.actorEmail})
                           </div>
@@ -214,8 +249,8 @@ export function AuditLogsPage() {
                           {expandedLogId === log.id ? 'Жашыруу' : 'Деталдар'}
                         </Button>
                         {expandedLogId === log.id && (
-                          <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Метадата:</h4>
+                          <div className="mt-2 rounded-2xl border border-edubot-line bg-edubot-surfaceAlt/80 p-3">
+                            <h4 className="mb-2 text-sm font-medium text-edubot-dark">Метадата:</h4>
                             {formatMetadata(log.metadata)}
                           </div>
                         )}
@@ -226,8 +261,8 @@ export function AuditLogsPage() {
               </div>
               {totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    Барак {page} / {totalPages}
+                  <div className="text-sm text-edubot-muted">
+                  Бет {page} / {totalPages}
                   </div>
                   <div className="flex gap-2">
                     <Button

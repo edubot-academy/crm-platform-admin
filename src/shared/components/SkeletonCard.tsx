@@ -12,18 +12,18 @@ export function SkeletonCard({
   lines = 3
 }: SkeletonCardProps) {
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className={`rounded-panel border border-edubot-line/80 bg-white/90 shadow-edubot-card ${className}`}>
       {showHeader && (
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="h-6 bg-gray-200 rounded animate-shimmer" style={{ width: '40%' }} />
+        <div className="border-b border-edubot-line/80 px-6 py-5">
+          <div className="h-6 animate-shimmer rounded bg-slate-200" style={{ width: '40%' }} />
         </div>
       )}
       {showContent && (
-        <div className="px-6 py-4 space-y-3">
+        <div className="space-y-3 px-6 py-5">
           {Array.from({ length: lines }).map((_, i) => (
             <div
               key={i}
-              className="h-4 bg-gray-200 rounded animate-shimmer"
+              className="h-4 animate-shimmer rounded bg-slate-200"
               style={{ width: i === lines - 1 ? '70%' : '100%' }}
             />
           ))}

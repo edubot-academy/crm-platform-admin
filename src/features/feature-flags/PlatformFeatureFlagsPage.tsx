@@ -1,10 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 import toast from 'react-hot-toast';
+import { Alert } from '../../shared/components/Alert';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { FilterBar, FilterBarItem } from '../../shared/components/FilterBar';
 import { Input } from '../../shared/components/Input';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { SectionIntro } from '../../shared/components/SectionIntro';
+import { Select } from '../../shared/components/Select';
+import { Switch } from '../../shared/components/Switch';
 import { platformFeatureFlagsApi, type FeatureFlag } from './platformFeatureFlagsApi';
 import { Flag, Search, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -12,11 +19,11 @@ import { Flag, Search, Info, ChevronDown, ChevronUp } from 'lucide-react';
 const FLAG_DISPLAY_INFO: Record<string, { label: string; description: string; isCore?: boolean }> = {
   custom_roles_enabled: {
     label: 'Ыңгайлаштырылган ролдордун жеткиликтүүлүгү',
-    description: 'Тенанттар үчүн ыңгайлаштырылган ролдорду колдонуу мүмкүнчүлүгүн платформа деңгээлинде күйгүзөт же өчүрөт.',
+    description: 'Уюмдар үчүн ыңгайлаштырылган ролдорду колдонуу мүмкүнчүлүгүн платформа деңгээлинде күйгүзөт же өчүрөт.',
   },
   custom_domain_enabled: {
     label: 'Жеке домендин жеткиликтүүлүгү',
-    description: 'Тенанттарга жеке домен колдонуу мүмкүнчүлүгүн платформа деңгээлинде күйгүзөт же өчүрөт.',
+    description: 'Уюмдарга жеке домен колдонуу мүмкүнчүлүгүн платформа деңгээлинде күйгүзөт же өчүрөт.',
   },
   crm_enabled: {
     label: 'CRM негизги модулунун жеткиликтүүлүгү',
@@ -62,32 +69,37 @@ export function PlatformFeatureFlagsPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadFlags();
-  }, []);
-
-  const loadFlags = async () => {
+  const loadFlags = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await platformFeatureFlagsApi.getFeatureFlags();
       setFlags(data);
-    } catch (err: any) {
-      setError('Функцияларды жүктөө мүмкүн болгон жок');
+    } catch (err: unknown) {
+      setError(isAxiosError(err) ? err.response?.data?.message || 'Функцияларды жүктөө мүмкүн болгон жок' : 'Функцияларды жүктөө мүмкүн болгон жок');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadFlags();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadFlags]);
 
   const handleToggle = async (key: string, currentEnabled: boolean) => {
     setUpdating(key);
     try {
       await platformFeatureFlagsApi.updateFeatureFlag(key, !currentEnabled);
       toast.success('Функция ийгиликтүү жаңыртылды');
-      loadFlags();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Функцияны жаңыртууда ката кетти');
-      toast.error(err.response?.data?.message || 'Функцияны жаңыртууда ката кетти');
+      void loadFlags();
+    } catch (err: unknown) {
+      const errorMessage = isAxiosError(err) ? err.response?.data?.message || 'Функцияны жаңыртууда ката кетти' : 'Функцияны жаңыртууда ката кетти';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUpdating(null);
     }
@@ -129,59 +141,57 @@ export function PlatformFeatureFlagsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Платформа мүмкүнчүлүктөрү</h1>
+      <PageHeader
+        title="Платформа функциялары"
+        description="Бул бөлүмдө функциялар платформа деңгээлинде күйгүзүлөт же өчүрүлөт. Уюм үчүн жеткиликтүүлүк тарифке жана өзүнчө уруксаттарга жараша аныкталат."
+      />
 
-      <Card className="mb-6">
-        <CardContent className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-900 font-medium mb-2">
-            Бул бөлүм функциялардын бүт платформа боюнча жеткиликтүүлүгүн башкарат. Бул тенанттын тарифи же жеке уруксаты эмес.
-          </p>
-          <p className="text-sm text-blue-800">
-            Эгер функция бул жерде өчүрүлсө, ал эч бир тенантка жеткиликтүү болбойт. Эгер күйгүзүлсө, аны колдонуу тенанттын тарифи жана өзгөчө уруксаттары аркылуу аныкталат.
-          </p>
-        </CardContent>
-      </Card>
+      <Alert variant="info" title="Платформа деңгээлиндеги башкаруу" className="mb-6">
+        Эгер функция бул жерде өчүрүлсө, ал эч бир уюмга жеткиликтүү болбойт. Эгер күйгүзүлсө, аны колдонуу уюмдун тарифи жана өзүнчө уруксаттары аркылуу аныкталат.
+      </Alert>
 
-      <Card>
+      <Card className="app-surface">
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Платформа мүмкүнчүлүктөрү</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Бул жердеги күйгүзүү/өчүрүү бардык тенанттарга тиешелүү master switch болуп эсептелет. Тенанттын конкреттүү мүмкүнчүлүгү тариф жана tenant override аркылуу чечилет.
-          </p>
+          <SectionIntro
+            title="Платформа функциялары"
+            description="Бул жердеги күйгүзүү же өчүрүү бардык уюмдарга таасир этет. Ар бир уюм үчүн так жеткиликтүүлүк тарифке жана өзүнчө уруксаттарга жараша аныкталат."
+          />
         </CardHeader>
         <CardContent>
-          {/* Search and Filter */}
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Издөө..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+          <FilterBar>
+            <FilterBarItem grow>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-edubot-muted" />
+                <Input
+                  placeholder="Издөө..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </FilterBarItem>
+            <FilterBarItem widthClassName="w-full md:w-72">
+              <Select
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                options={[
+                  { value: '', label: 'Бардык категориялар' },
+                  ...categories.map((cat) => ({ value: cat, label: cat })),
+                ]}
+                placeholder="Бардык категориялар"
               />
-            </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Бардык категориялар</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+            </FilterBarItem>
+          </FilterBar>
 
           {loading ? (
             <SkeletonTable rows={5} columns={2} />
           ) : error ? (
-            <div className="text-center py-8 text-red-500">{error}</div>
+            <Alert variant="error">{error}</Alert>
           ) : flags.length === 0 ? (
             <EmptyState
               icon={Flag}
               title="Функциялар табылган жок"
-              description="Платформада мүмкүнчүлүктөр жок. Системадан маалымат алыңыз."
+              description="Платформада функциялар табылган жок."
             />
           ) : (
             <div className="space-y-6">
@@ -193,35 +203,35 @@ export function PlatformFeatureFlagsPage() {
 
                 return (
                   <div key={category}>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">{category}</h3>
+                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">{category}</h3>
                     <div className="space-y-3">
                       {filteredCategoryFlags.map((flag) => (
                         <div
                           key={flag.key}
-                          className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                          className="flex items-start justify-between rounded-[1.5rem] border border-edubot-line bg-white/75 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-edubot-orange/35 hover:shadow-edubot-soft"
                         >
                           <div className="flex-1 pr-4">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="font-medium text-gray-900">
+                              <h3 className="font-medium text-edubot-dark">
                                 {FLAG_DISPLAY_INFO[flag.key]?.label || flag.name}
                                 {FLAG_DISPLAY_INFO[flag.key]?.isCore && (
-                                  <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                                     Негизги модуль
                                   </span>
                                 )}
                               </h3>
                               <Badge variant={flag.enabled ? 'success' : 'neutral'}>
-                                {flag.enabled ? 'Платформада жеткиликтүү' : 'Платформада өчүрүлгөн'}
+                                {flag.enabled ? 'Күйгүзүлгөн' : 'Өчүрүлгөн'}
                               </Badge>
                             </div>
                             <div className="relative">
-                              <p className={`text-sm text-gray-500 ${expandedDescriptions.has(flag.key) ? '' : 'line-clamp-2'}`}>
+                              <p className={`text-sm text-edubot-muted ${expandedDescriptions.has(flag.key) ? '' : 'line-clamp-2'}`}>
                                 {FLAG_DISPLAY_INFO[flag.key]?.description || flag.description || flag.key}
                               </p>
                               {((FLAG_DISPLAY_INFO[flag.key]?.description || flag.description)?.length || 0) > 100 && (
                                 <button
                                   onClick={() => toggleDescription(flag.key)}
-                                  className="flex items-center text-xs text-primary-600 hover:text-primary-700 mt-1"
+                                  className="mt-1 flex items-center text-xs text-primary-600 hover:text-primary-700"
                                   aria-label={expandedDescriptions.has(flag.key) ? 'Сүрөттөмөнү жашыруу' : 'Сүрөттөмөнү көрсөтүү'}
                                 >
                                   {expandedDescriptions.has(flag.key) ? (
@@ -238,23 +248,12 @@ export function PlatformFeatureFlagsPage() {
                             </div>
                           </div>
                           <div className="flex flex-col items-center gap-2">
-                            <button
-                              onClick={() => handleToggle(flag.key, flag.enabled)}
+                            <Switch
+                              checked={flag.enabled}
+                              onChange={() => handleToggle(flag.key, flag.enabled)}
                               disabled={updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out ${flag.enabled ? 'bg-primary-600' : 'bg-gray-300'
-                                } ${updating === flag.key || FLAG_DISPLAY_INFO[flag.key]?.isCore
-                                  ? 'opacity-50 cursor-not-allowed'
-                                  : 'cursor-pointer hover:opacity-90'
-                                }`}
-                              aria-label={flag.enabled ? `${flag.name} өчүрүү` : `${flag.name} кошуу`}
-                              aria-checked={flag.enabled}
-                              role="switch"
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${flag.enabled ? 'translate-x-6' : 'translate-x-1'
-                                  }`}
-                              />
-                            </button>
+                              ariaLabel={flag.enabled ? `${flag.name} өчүрүү` : `${flag.name} кошуу`}
+                            />
                             {FLAG_DISPLAY_INFO[flag.key]?.isCore && (
                               <div className="flex items-center text-xs text-gray-500" title="Бул негизги модул">
                                 <Info className="w-3 h-3 mr-1" />

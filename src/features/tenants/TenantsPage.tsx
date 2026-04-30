@@ -1,26 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { isAxiosError } from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Alert } from '../../shared/components/Alert';
 import { Button } from '../../shared/components/Button';
 import { Card, CardContent } from '../../shared/components/Card';
+import { FilterBar, FilterBarItem } from '../../shared/components/FilterBar';
 import { Input } from '../../shared/components/Input';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { Select } from '../../shared/components/Select';
 import { Table } from '../../shared/components/Table';
 import { Badge } from '../../shared/components/Badge';
 import { SkeletonTable } from '../../shared/components/SkeletonTable';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { FormModal } from '../../shared/components/FormModal';
 import { Plus, Search, ChevronLeft, ChevronRight, Users, ChevronDown, Filter, LayoutGrid, List, MoreVertical, Eye } from 'lucide-react';
 import { tenantApi, type TenantSummary, type GetTenantsParams } from './tenantApi';
+import { TenantOnboardForm } from './components/TenantOnboardForm';
 
 export function TenantsPage() {
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState<TenantSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState('');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [actionDropdownOpen, setActionDropdownOpen] = useState<number | null>(null);
+  const [showCreateTenantModal, setShowCreateTenantModal] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState({
+    createdAtFrom: '',
+    createdAtTo: '',
+  });
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState({
     createdAtFrom: '',
     createdAtTo: '',
   });
@@ -31,25 +45,25 @@ export function TenantsPage() {
     totalPages: 0,
   });
 
-  const buildTenantParams = (): GetTenantsParams => {
+  const tenantParams = useMemo(() => {
     const params: GetTenantsParams = {
       page: pagination.page,
       limit: pagination.limit,
     };
 
-    if (search) params.search = search;
-    if (statusFilter) params.status = statusFilter;
-    if (advancedFilters.createdAtFrom) params.createdAtFrom = advancedFilters.createdAtFrom;
-    if (advancedFilters.createdAtTo) params.createdAtTo = advancedFilters.createdAtTo;
+    if (appliedSearch) params.search = appliedSearch;
+    if (appliedStatusFilter) params.status = appliedStatusFilter;
+    if (appliedAdvancedFilters.createdAtFrom) params.createdAtFrom = appliedAdvancedFilters.createdAtFrom;
+    if (appliedAdvancedFilters.createdAtTo) params.createdAtTo = appliedAdvancedFilters.createdAtTo;
 
     return params;
-  };
+  }, [pagination.page, pagination.limit, appliedSearch, appliedStatusFilter, appliedAdvancedFilters.createdAtFrom, appliedAdvancedFilters.createdAtTo]);
 
-  const loadTenants = async () => {
+  const loadTenants = async (params: GetTenantsParams = tenantParams) => {
     setLoading(true);
     setError('');
     try {
-      const response = await tenantApi.getTenants(buildTenantParams());
+      const response = await tenantApi.getTenants(params);
       setTenants(response.items);
       setPagination((current) => ({
         ...current,
@@ -57,48 +71,37 @@ export function TenantsPage() {
         totalPages: response.totalPages,
       }));
     } catch (error) {
-      setError(isAxiosError(error) ? error.response?.data?.message || 'Тенанттарды жүктөөдө ката кетти' : 'Тенанттарды жүктөөдө ката кетти');
+      setError(isAxiosError(error) ? error.response?.data?.message || 'Уюмдарды жүктөөдө ката кетти' : 'Уюмдарды жүктөөдө ката кетти');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void (async () => {
-        setLoading(true);
-        setError('');
-        try {
-          const params: GetTenantsParams = {
-            page: pagination.page,
-            limit: pagination.limit,
-          };
-
-          if (search) params.search = search;
-          if (statusFilter) params.status = statusFilter;
-          if (advancedFilters.createdAtFrom) params.createdAtFrom = advancedFilters.createdAtFrom;
-          if (advancedFilters.createdAtTo) params.createdAtTo = advancedFilters.createdAtTo;
-
-          const response = await tenantApi.getTenants(params);
-          setTenants(response.items);
-          setPagination((current) => ({
-            ...current,
-            total: response.total,
-            totalPages: response.totalPages,
-          }));
-        } catch (error) {
-          setError(isAxiosError(error) ? error.response?.data?.message || 'Тенанттарды жүктөөдө ката кетти' : 'Тенанттарды жүктөөдө ката кетти');
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [pagination.page, pagination.limit, search, statusFilter, advancedFilters.createdAtFrom, advancedFilters.createdAtTo]);
+    void (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await tenantApi.getTenants(tenantParams);
+        setTenants(response.items);
+        setPagination((current) => ({
+          ...current,
+          total: response.total,
+          totalPages: response.totalPages,
+        }));
+      } catch (error) {
+        setError(isAxiosError(error) ? error.response?.data?.message || 'Уюмдарды жүктөөдө ката кетти' : 'Уюмдарды жүктөөдө ката кетти');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [tenantParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setAppliedSearch(search);
+    setAppliedStatusFilter(statusFilter);
+    setAppliedAdvancedFilters(advancedFilters);
     setPagination((current) => ({ ...current, page: 1 }));
   };
 
@@ -112,33 +115,38 @@ export function TenantsPage() {
     {
       key: 'primaryDomain',
       header: 'Негизги домен',
-      render: (value: string | null) => value || 'Жок',
+      render: (value: unknown) => (value as string | null) || 'Жок',
     },
     {
       key: 'plan',
       header: 'Тариф',
-      render: (value: TenantSummary['plan']) => value?.name || value?.code || 'Жок',
+      render: (value: unknown) => {
+        const plan = value as TenantSummary['plan'];
+        return plan?.name || plan?.code || 'Жок';
+      },
     },
     {
       key: 'status',
       header: 'Статус',
-      render: (value: string) => {
-        const variant = value === 'active' ? 'success' : value === 'suspended' ? 'danger' : value === 'archived' ? 'neutral' : 'warning';
-        const label = value === 'active' ? 'Активдүү' : value === 'suspended' ? 'Токтотулган' : value === 'archived' ? 'Архивделген' : 'Актив эмес';
+      render: (value: unknown) => {
+        const status = value as string;
+        const variant = status === 'active' ? 'success' : status === 'suspended' ? 'danger' : status === 'archived' ? 'neutral' : 'warning';
+        const label = status === 'active' ? 'Активдүү' : status === 'suspended' ? 'Токтотулган' : status === 'archived' ? 'Архивделген' : 'Актив эмес';
         return <Badge variant={variant}>{label}</Badge>;
       },
     },
     {
       key: 'createdAt',
       header: 'Түзүлгөн күнү',
-      render: (value: string) => new Date(value).toLocaleDateString('ky-KG'),
+      render: (value: unknown) => new Date(value as string).toLocaleDateString('ky-KG'),
     },
     {
       key: 'actions',
       header: 'Аракеттер',
       render: (_value: unknown, row: TenantSummary) => (
-        <div className="relative">
+        <div className="relative" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
           <button
+            type="button"
             onClick={() => setActionDropdownOpen(actionDropdownOpen === row.id ? null : row.id)}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Көбүрөөк аракеттер"
@@ -164,15 +172,17 @@ export function TenantsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Тенанттар</h1>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center border border-gray-200 rounded-lg">
+      <PageHeader
+        title="Уюмдар"
+        description="Уюмдарды издөө, статусу боюнча чыпкалоо жана толук профилине тез өтүү үчүн борбордук тизме."
+        actions={(
+          <>
+          <div className="flex items-center rounded-2xl border border-edubot-line bg-white/80 p-1 shadow-sm">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('table')}
-              className={`rounded-r-none ${viewMode === 'table' ? 'bg-gray-100' : ''}`}
+              className={viewMode === 'table' ? 'bg-edubot-orange/10 text-edubot-orange' : ''}
               leftIcon={List}
               iconOnly
               aria-label="Таблица көрүнүшү"
@@ -183,7 +193,7 @@ export function TenantsPage() {
               variant="ghost"
               size="sm"
               onClick={() => setViewMode('card')}
-              className={`rounded-l-none ${viewMode === 'card' ? 'bg-gray-100' : ''}`}
+              className={viewMode === 'card' ? 'bg-edubot-orange/10 text-edubot-orange' : ''}
               leftIcon={LayoutGrid}
               iconOnly
               aria-label="Карточка көрүнүшү"
@@ -191,23 +201,38 @@ export function TenantsPage() {
               <LayoutGrid className="w-4 h-4" />
             </Button>
           </div>
-          <Link to="/platform/tenants/new">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Жаңы тенант
-            </Button>
-          </Link>
-        </div>
-      </div>
+          <Button onClick={() => setShowCreateTenantModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Жаңы уюм
+          </Button>
+          </>
+        )}
+      />
 
-      <Card>
+      <FormModal
+        isOpen={showCreateTenantModal}
+        title="Жаңы уюм"
+        description="Компанияны, администраторду жана баштапкы коммерциялык орнотууларды бир агымда түзүңүз."
+        maxWidthClassName="max-w-4xl"
+        onClose={() => setShowCreateTenantModal(false)}
+      >
+        <TenantOnboardForm
+          variant="modal"
+          onCancel={() => setShowCreateTenantModal(false)}
+          onCreated={() => {
+            void loadTenants(tenantParams);
+          }}
+        />
+      </FormModal>
+
+      <Card className="app-surface">
         <CardContent className="p-6">
 
           {/* Search and Filter */}
-          <div className="flex gap-4 mb-6">
+          <FilterBar className="lg:flex-row">
             <form onSubmit={handleSearch} className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-edubot-muted" />
                 <Input
                   placeholder="Издөө..."
                   value={search}
@@ -216,33 +241,36 @@ export function TenantsPage() {
                 />
               </div>
             </form>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Бардык статус</option>
-              <option value="active">Активдүү</option>
-              <option value="inactive">Актив эмес</option>
-              <option value="suspended">Токтотулган</option>
-              <option value="archived">Архивделген</option>
-            </select>
+            <FilterBarItem widthClassName="w-full lg:w-56">
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: '', label: 'Бардык статус' },
+                  { value: 'active', label: 'Активдүү' },
+                  { value: 'inactive', label: 'Актив эмес' },
+                  { value: 'suspended', label: 'Токтотулган' },
+                  { value: 'archived', label: 'Архивделген' },
+                ]}
+                placeholder="Бардык статус"
+              />
+            </FilterBarItem>
             <Button
               variant="ghost"
               onClick={() => setFilterPanelOpen(!filterPanelOpen)}
               leftIcon={Filter}
             >
-              Өркүнчөү
+              Кеңири чыпкалар
               <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${filterPanelOpen ? 'rotate-180' : ''}`} />
             </Button>
-          </div>
+          </FilterBar>
 
           {/* Advanced Filter Panel */}
           {filterPanelOpen && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="mb-6 rounded-3xl border border-edubot-line bg-edubot-surfaceAlt/75 p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Түзүлгөн күнү (башы)</label>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">Түзүлгөн күнү (башы)</label>
                   <Input
                     type="date"
                     value={advancedFilters.createdAtFrom}
@@ -250,7 +278,7 @@ export function TenantsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Түзүлгөн күнү (аягы)</label>
+                  <label className="mb-1 block text-sm font-medium text-edubot-dark">Түзүлгөн күнү (аягы)</label>
                   <Input
                     type="date"
                     value={advancedFilters.createdAtTo}
@@ -262,19 +290,26 @@ export function TenantsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setAdvancedFilters({ createdAtFrom: '', createdAtTo: '' });
+                    const emptyFilters = { createdAtFrom: '', createdAtTo: '' };
+                    setSearch('');
+                    setStatusFilter('');
+                    setAdvancedFilters(emptyFilters);
+                    setAppliedSearch('');
+                    setAppliedStatusFilter('');
+                    setAppliedAdvancedFilters(emptyFilters);
                     setPagination((current) => ({ ...current, page: 1 }));
                     setFilterPanelOpen(false);
-                    void loadTenants();
                   }}
                 >
                   Тазалоо
                 </Button>
                 <Button
                   onClick={() => {
+                    setAppliedSearch(search);
+                    setAppliedStatusFilter(statusFilter);
+                    setAppliedAdvancedFilters(advancedFilters);
                     setPagination((current) => ({ ...current, page: 1 }));
                     setFilterPanelOpen(false);
-                    void loadTenants();
                   }}
                 >
                   Колдонуу
@@ -286,14 +321,14 @@ export function TenantsPage() {
           {loading ? (
             <SkeletonTable rows={5} columns={7} />
           ) : error ? (
-            <div className="text-center py-8 text-red-500">{error}</div>
+            <Alert variant="error">{error}</Alert>
           ) : !tenants || tenants.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="Тенанттар табылган жок"
-              description="Тенанттарды изделүү үчүн издөө параметрлерин өзгөртүңүз жаңы тенант түзүңүз"
-              actionText="Жаңы тенант"
-              onAction={() => window.location.href = '/platform/tenants/new'}
+              title="Уюмдар табылган жок"
+              description="Издөө шарттарын өзгөртүңүз же жаңы уюм түзүңүз."
+              actionText="Жаңы уюм"
+              onAction={() => setShowCreateTenantModal(true)}
             />
           ) : (
             <>
@@ -301,6 +336,8 @@ export function TenantsPage() {
                 <Table
                   columns={columns}
                   data={tenants}
+                  rowKey="id"
+                  onRowClick={(row) => navigate(`/platform/tenants/${row.id}`)}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -362,7 +399,7 @@ export function TenantsPage() {
               )}
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-gray-500">
-                  Жалпы: {pagination.total} тенант
+                  Жалпы: {pagination.total} уюм
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

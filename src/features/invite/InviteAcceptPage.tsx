@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { isAxiosError } from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { Alert } from '../../shared/components/Alert';
 import { Button } from '../../shared/components/Button';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
 import { Input } from '../../shared/components/Input';
@@ -25,7 +27,7 @@ export function InviteAcceptPage() {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-    const labels = ['', 'Азырк', 'Орто', 'Жакшы', 'Мыкты', 'Өтө мыкты'];
+    const labels = ['', 'Алсыз', 'Орточо', 'Жакшы', 'Күчтүү', 'Өтө күчтүү'];
     const colors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'];
     return { score, label: labels[score], color: colors[score] };
   };
@@ -63,9 +65,9 @@ export function InviteAcceptPage() {
         tenantId ? { headers: { 'X-Company-Id': tenantId } } : undefined
       );
       setSuccess(true);
-      toast.success('Сырсөздү ийгиликтүү орнотулду. Кирүү үчүн логин кылыңыз.');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Чакырууну кабыл алууда ката кетти';
+      toast.success('Сырсөз ийгиликтүү орнотулду. Кирүү үчүн аккаунтуңузга кириңиз.');
+    } catch (err: unknown) {
+      const errorMessage = isAxiosError(err) ? err.response?.data?.message || 'Чакырууну кабыл алууда ката кетти' : 'Чакырууну кабыл алууда ката кетти';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -74,34 +76,40 @@ export function InviteAcceptPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <Card>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-edubot-hero opacity-[0.08]" />
+      <div className="absolute left-[-8%] top-[-10%] h-72 w-72 rounded-full bg-edubot-orange/15 blur-3xl" />
+      <div className="absolute bottom-[-14%] right-[-8%] h-80 w-80 rounded-full bg-edubot-teal/15 blur-3xl" />
+      <div className="relative max-w-md w-full">
+        <Card className="app-surface">
           <CardHeader>
-            <h2 className="text-2xl font-bold text-center text-gray-900">Сырсөздү орнотуңуз</h2>
-            <p className="text-center text-sm text-gray-500 mt-2">
-              Чакырууну кабыл алып, аккаунтуңузду активдештириңиз
+            <div className="mb-4 flex justify-center">
+              <div className="dashboard-pill !border-edubot-orange/20 !bg-edubot-dark !text-white">
+                Edubot Чакыруу
+              </div>
+            </div>
+            <h2 className="text-center text-2xl font-bold text-edubot-dark">Сырсөздү орнотуңуз</h2>
+            <p className="mt-2 text-center text-sm text-edubot-muted">
+              Чакырууну кабыл алып, каттоо эсебиңизди активдештириңиз
             </p>
           </CardHeader>
           <CardContent>
             {success ? (
               <div className="text-center py-8">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Сырсөздү ийгиликтүү орнотулду!</h3>
-                <p className="text-sm text-gray-500">
-                  Аккаунтуңуз активдештирилди. Кирүү үчүн логин баракка өтүңүз.
+                <h3 className="mb-2 text-lg font-medium text-edubot-dark">Сырсөз ийгиликтүү орнотулду!</h3>
+                <p className="text-sm text-edubot-muted">
+                  Каттоо эсебиңиз активдештирилди. Кирүү үчүн авторизация барагына өтүңүз.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {error}
-                  </div>
+                  <Alert variant="error">{error}</Alert>
                 )}
 
                 <Input
@@ -123,7 +131,7 @@ export function InviteAcceptPage() {
                         />
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500">Сырсөз күчү: {passwordStrength.label}</p>
+                    <p className="text-xs text-edubot-muted">Сырсөз күчү: {passwordStrength.label}</p>
                   </div>
                 )}
 

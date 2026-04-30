@@ -23,19 +23,19 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50';
+  const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-2xl font-medium transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-primary-200/70 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50 active:scale-[0.99]';
 
   const variantStyles = {
-    primary: 'bg-[#2563eb] text-white hover:bg-[#1d4ed8] focus:ring-[#2563eb] shadow-sm hover:shadow-md',
-    secondary: 'bg-[#e5e7eb] text-[#000000] hover:bg-[#d1d5db] focus:ring-[#6b7280]',
-    danger: 'bg-[#dc2626] text-white hover:bg-[#b91c1c] focus:ring-[#dc2626] shadow-sm hover:shadow-md',
-    ghost: 'bg-transparent text-[#000000] hover:bg-[#f3f4f6] focus:ring-[#6b7280]',
+    primary: 'bg-gradient-to-r from-edubot-orange to-edubot-soft text-white shadow-edubot-soft hover:-translate-y-0.5 hover:shadow-edubot-hover-soft',
+    secondary: 'border border-edubot-line bg-white/85 text-edubot-ink shadow-sm hover:-translate-y-0.5 hover:border-edubot-orange/50 hover:text-edubot-orange hover:shadow-edubot-soft',
+    danger: 'bg-edubot-danger text-white shadow-sm hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg focus:ring-red-200',
+    ghost: 'bg-transparent text-edubot-ink hover:bg-edubot-orange/10 hover:text-edubot-orange',
   };
 
   const sizeStyles = {
-    sm: iconOnly ? 'p-1.5' : 'px-3 py-1.5 text-sm',
-    md: iconOnly ? 'p-2' : 'px-4 py-2 text-sm',
-    lg: iconOnly ? 'p-3' : 'px-6 py-3 text-base',
+    sm: iconOnly ? 'h-9 w-9 p-0' : 'px-3 py-2 text-sm',
+    md: iconOnly ? 'h-10 w-10 p-0' : 'px-4 py-2.5 text-sm',
+    lg: iconOnly ? 'h-12 w-12 p-0' : 'px-5 py-3 text-base',
   };
 
   const iconSize = {
@@ -58,7 +58,7 @@ export function Button({
         <LoadingSpinner size={size === 'lg' ? 'md' : 'sm'} color={spinnerColor} />
       ) : (
         <>
-          {LeftIcon && !iconOnly && <LeftIcon className={`${iconSize[size]} mr-2`} />}
+          {LeftIcon && !iconOnly && <LeftIcon className={iconSize[size]} />}
           {iconOnly ? (
             LeftIcon ? (
               <LeftIcon className={iconSize[size]} />
@@ -70,7 +70,7 @@ export function Button({
           ) : (
             children
           )}
-          {RightIcon && !iconOnly && <RightIcon className={`${iconSize[size]} ml-2`} />}
+          {RightIcon && !iconOnly && <RightIcon className={iconSize[size]} />}
         </>
       )}
     </button>

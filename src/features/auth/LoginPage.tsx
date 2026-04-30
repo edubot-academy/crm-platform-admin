@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { authService } from '../../shared/auth/authService';
+import { Alert } from '../../shared/components/Alert';
 import { Button } from '../../shared/components/Button';
 import { Input } from '../../shared/components/Input';
 import { Card, CardContent, CardHeader } from '../../shared/components/Card';
@@ -42,14 +43,22 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div className="absolute inset-0 bg-edubot-hero opacity-[0.08]" />
+      <div className="absolute left-[-10%] top-[-12%] h-72 w-72 rounded-full bg-edubot-orange/15 blur-3xl" />
+      <div className="absolute bottom-[-14%] right-[-8%] h-80 w-80 rounded-full bg-edubot-teal/15 blur-3xl" />
+      <Card className="relative w-full max-w-md app-surface">
         <CardHeader>
-          <h1 className="text-2xl font-bold text-center text-gray-900">
-            Платформа Админ
+          <div className="mb-4 flex justify-center">
+            <div className="dashboard-pill !border-edubot-orange/20 !bg-edubot-dark !text-white">
+              Edubot Платформа
+            </div>
+          </div>
+          <h1 className="text-center text-2xl font-bold text-edubot-dark">
+            Платформа админ панели
           </h1>
-          <p className="text-center text-gray-600 text-sm mt-2">
-            Суперадмин порталына кирүү
+          <p className="mt-2 text-center text-sm text-edubot-muted">
+            Суперадмин үчүн кирүү
           </p>
         </CardHeader>
         <CardContent>
@@ -63,7 +72,7 @@ export function LoginPage() {
               placeholder="superadmin@edubot.it.com"
             />
             <Input
-              label="Пароль"
+              label="Сырсөз"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -71,9 +80,7 @@ export function LoginPage() {
               placeholder="••••••••"
             />
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
+              <Alert variant="error">{error}</Alert>
             )}
             <Button
               type="submit"

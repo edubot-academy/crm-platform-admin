@@ -2,9 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    color-scheme: light;
+    --edubot-dark: #122144;
+    --edubot-orange: #f17e22;
+    --edubot-green: #0ea78b;
+    --edubot-soft: #f39647;
+    --edubot-teal: #1e605e;
+    --edubot-ink: #0f172a;
+    --edubot-surface: #fffaf5;
+    --edubot-surface-alt: #f8fafc;
+    --edubot-line: #e2e8f0;
+    --edubot-muted: #64748b;
+  }
+
+  * {
+    @apply border-edubot-line;
+  }
+
+  html {
+    @apply bg-edubot-surface text-edubot-ink antialiased;
+  }
+
+  body {
+    @apply min-h-screen bg-edubot-surface text-edubot-ink;
+    background-image:
+      radial-gradient(circle at top left, rgba(241, 126, 34, 0.14), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(30, 96, 94, 0.1), transparent 24%),
+      linear-gradient(180deg, rgba(255, 250, 245, 0.96) 0%, rgba(248, 250, 252, 0.98) 100%);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: rgba(241, 126, 34, 0.18);
+    color: var(--edubot-dark);
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen bg-edubot-surface text-edubot-ink;
+  }
+
+  .app-surface {
+    @apply dashboard-panel;
+  }
+
+  .app-surface-muted {
+    @apply dashboard-panel-muted;
+  }
+
+  .app-heading {
+    @apply text-2xl font-bold tracking-tight text-edubot-dark;
+  }
+
+  .app-subtle {
+    @apply text-sm text-edubot-muted;
+  }
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 #root {

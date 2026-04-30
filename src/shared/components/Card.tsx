@@ -1,48 +1,57 @@
-interface CardProps {
-  children: React.ReactNode;
+import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
   className?: string;
   elevation?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   hoverable?: boolean;
   fullWidth?: boolean;
 }
 
-export function Card({ children, className = '', elevation = 'sm', hoverable = false, fullWidth = false }: CardProps) {
+export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
+  { children, className = '', elevation = 'sm', hoverable = false, fullWidth = false, ...props },
+  ref
+) {
   const elevationStyles = {
     none: 'shadow-none',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg',
-    xl: 'shadow-xl',
+    sm: 'shadow-edubot-card',
+    md: 'shadow-lg',
+    lg: 'shadow-edubot-hover',
+    xl: 'shadow-2xl',
   };
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 ${elevationStyles[elevation]} ${hoverable ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200' : ''} ${fullWidth ? 'w-full' : ''} ${className}`}>
+    <div
+      ref={ref}
+      className={`rounded-panel border border-edubot-line/80 bg-white/90 ${elevationStyles[elevation]} ${hoverable ? 'hover:-translate-y-1 hover:shadow-edubot-hover transition-all duration-300 ease-out' : ''} ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...props}
+    >
       {children}
     </div>
   );
-}
+});
 
 interface CardHeaderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
+    <div className={`px-6 py-5 border-b border-edubot-line/80 ${className}`}>
       {children}
     </div>
   );
 }
 
 interface CardContentProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }
 
 export function CardContent({ children, className = '' }: CardContentProps) {
   return (
-    <div className={`px-6 py-4 ${className}`}>
+    <div className={`px-6 py-5 ${className}`}>
       {children}
     </div>
   );
