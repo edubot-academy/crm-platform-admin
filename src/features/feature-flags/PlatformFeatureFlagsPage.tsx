@@ -58,6 +58,14 @@ const FLAG_DISPLAY_INFO: Record<string, { label: string; description: string; is
     label: 'Төлөмдөр модулунун жеткиликтүүлүгү',
     description: 'Төлөмдөрдү көзөмөлдөө жана эсеп-кысап модулун платформа боюнча жеткиликтүү кылат.',
   },
+  ai_assist_enabled: {
+    label: 'AI жардамчысынын жеткиликтүүлүгү',
+    description: 'AI жардамчысына байланышкан функцияларды платформа боюнча жеткиликтүү кылат. Бул жалпысынан AI мүмкүнчүлүктөрү үчүн негизги дарбаза.',
+  },
+  ai_followup_drafts_enabled: {
+    label: 'AI жооп сунушу функциясынын жеткиликтүүлүгү',
+    description: 'Лид, байланыш жана келишим карточкаларында follow-up жооп сунушун түзүү мүмкүнчүлүгүн платформа боюнча жеткиликтүү кылат.',
+  },
 };
 
 export function PlatformFeatureFlagsPage() {

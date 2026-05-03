@@ -46,6 +46,8 @@ export function PlansPage() {
     { key: 'lms_bridge_enabled', label: 'LMS байланышы' },
     { key: 'custom_roles_enabled', label: 'Ыңгайлаштырылган ролдор' },
     { key: 'custom_domain_enabled', label: 'Жеке домен' },
+    { key: 'ai_assist_enabled', label: 'AI жардамчысы' },
+    { key: 'ai_followup_drafts_enabled', label: 'AI жооп сунушу' },
   ];
 
   // Available limits for visual editor
@@ -104,6 +106,28 @@ export function PlansPage() {
     return null;
   };
 
+  const normalizePriceInput = (value: string): number | undefined => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+
+  const sanitizePlanPayload = (data: CreatePlanData): CreatePlanData => ({
+    ...data,
+    monthlyPrice:
+      typeof data.monthlyPrice === 'number' && Number.isFinite(data.monthlyPrice)
+        ? data.monthlyPrice
+        : undefined,
+    yearlyPrice:
+      typeof data.yearlyPrice === 'number' && Number.isFinite(data.yearlyPrice)
+        ? data.yearlyPrice
+        : undefined,
+  });
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -117,7 +141,7 @@ export function PlansPage() {
     setFormLoading(true);
 
     try {
-      await plansApi.createPlan(formData);
+      await plansApi.createPlan(sanitizePlanPayload(formData));
       toast.success('Тариф ийгиликтүү түзүлдү');
       setShowCreateForm(false);
       resetForm();
@@ -146,7 +170,7 @@ export function PlansPage() {
     setFormLoading(true);
 
     try {
-      await plansApi.updatePlan(editingPlan.id, formData);
+      await plansApi.updatePlan(editingPlan.id, sanitizePlanPayload(formData));
       toast.success('Тариф ийгиликтүү жаңыртылды');
       setShowEditForm(false);
       setEditingPlan(null);
@@ -272,15 +296,15 @@ export function PlansPage() {
                 <Input
                   label="Айлык баа"
                   type="number"
-                  value={formData.monthlyPrice || ''}
-                  onChange={(e) => setFormData({ ...formData, monthlyPrice: e.target.value ? Number(e.target.value) : undefined })}
+                  value={formData.monthlyPrice ?? ''}
+                  onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
                   placeholder="5000"
                 />
                 <Input
                   label="Жылдык баа"
                   type="number"
-                  value={formData.yearlyPrice || ''}
-                  onChange={(e) => setFormData({ ...formData, yearlyPrice: e.target.value ? Number(e.target.value) : undefined })}
+                  value={formData.yearlyPrice ?? ''}
+                  onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
                   placeholder="50000"
                 />
               </div>
@@ -398,14 +422,14 @@ export function PlansPage() {
                 <Input
                   label="Айлык баа"
                   type="number"
-                  value={formData.monthlyPrice || ''}
-                  onChange={(e) => setFormData({ ...formData, monthlyPrice: e.target.value ? Number(e.target.value) : undefined })}
+                  value={formData.monthlyPrice ?? ''}
+                  onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
                 />
                 <Input
                   label="Жылдык баа"
                   type="number"
-                  value={formData.yearlyPrice || ''}
-                  onChange={(e) => setFormData({ ...formData, yearlyPrice: e.target.value ? Number(e.target.value) : undefined })}
+                  value={formData.yearlyPrice ?? ''}
+                  onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
                 />
               </div>
               <Input

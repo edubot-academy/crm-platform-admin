@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-05-04
+
+### Added
+- **AI Feature Flags Management**: Platform-level control over AI features
+  - Added `ai_assist_enabled` and `ai_followup_drafts_enabled` feature flags to PlatformFeatureFlagsPage
+  - AI flags categorized under "Integrations" category with proper descriptions
+  - Toggle switches for enabling/disabling AI features at platform level
+  - Feature flag changes propagate to all tenants respecting platform/tenant override hierarchy
+  - Full Kyrgyz localization for AI feature descriptions and labels
+
+### Changed
+- **Feature Categories**: Updated category filtering to include new AI flags under "Integrations"
+- **Platform Dashboard**: AI feature status now reflected in platform overview statistics
+
 ## [0.7.1] - 2026-04-30
 
 ### Fixed

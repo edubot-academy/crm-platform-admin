@@ -26,6 +26,9 @@ export function TenantPlanTab({
   onSubmit,
   planAssignLoading,
 }: TenantPlanTabProps) {
+  const aiAssistEnabled = tenant.features?.ai_assist_enabled === true;
+  const aiDraftsEnabled = tenant.features?.ai_followup_drafts_enabled === true;
+
   return (
     <div className="space-y-6">
       <Card className="app-surface">
@@ -34,8 +37,25 @@ export function TenantPlanTab({
         </CardHeader>
         <CardContent>
           {tenant.plan?.id ? (
-            <div className="text-sm text-edubot-ink">
-              <span className="font-medium">Тариф:</span> {tenant.plan.name} ({tenant.plan.code})
+            <div className="space-y-3 text-sm text-edubot-ink">
+              <div>
+                <span className="font-medium">Тариф:</span> {tenant.plan.name} ({tenant.plan.code})
+              </div>
+              <div className="rounded-2xl border border-edubot-line bg-edubot-surface/70 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-edubot-muted">
+                  AI жеткиликтүүлүгү
+                </div>
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-medium">AI жардамчысы:</span>{' '}
+                    {aiAssistEnabled ? 'жеткиликтүү' : 'жеткиликтүү эмес'}
+                  </div>
+                  <div>
+                    <span className="font-medium">AI жооп сунушу:</span>{' '}
+                    {aiDraftsEnabled ? 'жеткиликтүү' : 'жеткиликтүү эмес'}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-sm text-edubot-muted">Тариф белгиленген эмес</div>
