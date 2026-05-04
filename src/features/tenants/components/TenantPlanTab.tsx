@@ -28,6 +28,8 @@ export function TenantPlanTab({
 }: TenantPlanTabProps) {
   const aiAssistEnabled = tenant.features?.ai_assist_enabled === true;
   const aiDraftsEnabled = tenant.features?.ai_followup_drafts_enabled === true;
+  const aiOperatorGuidanceEnabled = tenant.features?.ai_operator_guidance_enabled === true;
+  const aiInsightPersistenceEnabled = tenant.features?.ai_insight_persistence_enabled === true;
 
   return (
     <div className="space-y-6">
@@ -54,6 +56,14 @@ export function TenantPlanTab({
                     <span className="font-medium">AI жооп сунушу:</span>{' '}
                     {aiDraftsEnabled ? 'жеткиликтүү' : 'жеткиликтүү эмес'}
                   </div>
+                  <div>
+                    <span className="font-medium">AI сунуштары:</span>{' '}
+                    {aiOperatorGuidanceEnabled ? 'жеткиликтүү' : 'жеткиликтүү эмес'}
+                  </div>
+                  <div>
+                    <span className="font-medium">AI жыйынтыктарын сактоо:</span>{' '}
+                    {aiInsightPersistenceEnabled ? 'жеткиликтүү' : 'жеткиликтүү эмес'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -67,7 +77,7 @@ export function TenantPlanTab({
         <CardHeader>
           <SectionIntro
             title="Тарифти өзгөртүү"
-            description="Tenant үчүн жеткиликтүү активдүү тарифтердин бирин тандап, дароо кайра бекитиңиз."
+            description="Бул уюм үчүн жеткиликтүү активдүү тарифтердин бирин тандап, дароо дайындаңыз."
           />
         </CardHeader>
         <CardContent>
@@ -82,7 +92,7 @@ export function TenantPlanTab({
                 value={selectedPlanId}
                 onChange={onSelectedPlanIdChange}
                 options={[
-                  { value: '', label: 'Тарифти танданыз' },
+                  { value: '', label: 'Тарифти тандаңыз' },
                   ...plans.map((plan) => ({
                     value: plan.id,
                     label: `${plan.name} (${plan.code}) - ${plan.monthlyPrice || plan.yearlyPrice ? `${plan.monthlyPrice || plan.yearlyPrice} ${plan.currency}` : 'Баасы жок'}`,

@@ -35,20 +35,40 @@ export function PlansPage() {
   });
 
   // Available features for visual editor
-  const availableFeatures = [
-    { key: 'crm_enabled', label: 'CRM модулу' },
-    { key: 'payments_enabled', label: 'Төлөмдөр' },
-    { key: 'trial_lessons_enabled', label: 'Сыноо сабактар' },
-    { key: 'retention_enabled', label: 'Студентти кармап калуу' },
-    { key: 'telegram_notifications_enabled', label: 'Telegram билдирүүлөр' },
-    { key: 'whatsapp_integration_enabled', label: 'WhatsApp интеграциясы' },
-    { key: 'advanced_reports_enabled', label: 'Кеңейтилген отчеттор' },
-    { key: 'lms_bridge_enabled', label: 'LMS байланышы' },
-    { key: 'custom_roles_enabled', label: 'Ыңгайлаштырылган ролдор' },
-    { key: 'custom_domain_enabled', label: 'Жеке домен' },
-    { key: 'ai_assist_enabled', label: 'AI жардамчысы' },
-    { key: 'ai_followup_drafts_enabled', label: 'AI жооп сунушу' },
+  type FeatureItem = { key: string; label: string };
+
+  const featureGroups: Array<{ title: string; items: readonly FeatureItem[] }> = [
+    {
+      title: 'Негизги модулдар',
+      items: [
+        { key: 'crm_enabled', label: 'CRM модулу' },
+        { key: 'payments_enabled', label: 'Төлөмдөр' },
+        { key: 'trial_lessons_enabled', label: 'Сыноо сабактар' },
+        { key: 'retention_enabled', label: 'Студентти кармап калуу' },
+        { key: 'advanced_reports_enabled', label: 'Кеңейтилген отчеттор' },
+      ] as const,
+    },
+    {
+      title: 'Интеграциялар жана кошумчалар',
+      items: [
+        { key: 'telegram_notifications_enabled', label: 'Telegram билдирүүлөр' },
+        { key: 'whatsapp_integration_enabled', label: 'WhatsApp интеграциясы' },
+        { key: 'lms_bridge_enabled', label: 'LMS байланышы' },
+        { key: 'custom_roles_enabled', label: 'Ыңгайлаштырылган ролдор' },
+        { key: 'custom_domain_enabled', label: 'Жеке домен' },
+      ] as const,
+    },
+    {
+      title: 'AI мүмкүнчүлүктөрү',
+      items: [
+        { key: 'ai_assist_enabled', label: 'AI жардамчысы' },
+        { key: 'ai_followup_drafts_enabled', label: 'AI жооп сунушу' },
+        { key: 'ai_operator_guidance_enabled', label: 'AI сунуштары' },
+        { key: 'ai_insight_persistence_enabled', label: 'AI жыйынтыктарын сактоо' },
+      ] as const,
+    },
   ];
+  const availableFeatures: FeatureItem[] = featureGroups.flatMap((group) => group.items);
 
   // Available limits for visual editor
   const availableLimits = [
@@ -255,7 +275,7 @@ export function PlansPage() {
     <div>
       <PageHeader
         title="Тарифтер"
-        description="Платформадагы бардык коммерциялык пландарды, лимиттерди жана модулдук жеткиликтүүлүктү бир жерден башкарыңыз."
+        description="Пландарды баасы, модулдары жана чектөөлөрү боюнча түшүнүктүү түрдө башкарыңыз."
         actions={(
           <Button onClick={() => { setShowCreateForm(!showCreateForm); resetForm(); }}>
             <Plus className="mr-2 h-4 w-4" />
@@ -272,123 +292,127 @@ export function PlansPage() {
         onClose={() => { setShowCreateForm(false); resetForm(); }}
       >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <Input
-                label="Тарифтин аталышы"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                placeholder="Starter"
-              />
-              <Input
-                label="Код"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
-                required
-                placeholder="starter"
-              />
-              <Input
-                label="Сүрөттөмө"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Башталгыч план"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Айлык баа"
-                  type="number"
-                  value={formData.monthlyPrice ?? ''}
-                  onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
-                  placeholder="5000"
-                />
-                <Input
-                  label="Жылдык баа"
-                  type="number"
-                  value={formData.yearlyPrice ?? ''}
-                  onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
-                  placeholder="50000"
-                />
-              </div>
-              <Input
-                label="Валюта"
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                placeholder="KGS"
-              />
+          <Input
+            label="Тарифтин аталышы"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+            placeholder="Starter"
+          />
+          <Input
+            label="Код"
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
+            required
+            placeholder="starter"
+          />
+          <Input
+            label="Сүрөттөмө"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Башталгыч план"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Айлык баа"
+              type="number"
+              value={formData.monthlyPrice ?? ''}
+              onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
+              placeholder="5000"
+            />
+            <Input
+              label="Жылдык баа"
+              type="number"
+              value={formData.yearlyPrice ?? ''}
+              onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
+              placeholder="50000"
+            />
+          </div>
+          <Input
+            label="Валюта"
+            value={formData.currency}
+            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+            placeholder="KGS"
+          />
 
-              {/* Visual Feature Editor */}
-              <div className={panelClasses}>
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableFeatures.map((feature) => (
-                    <label
-                      key={feature.key}
-                      className={`${optionCardClasses} cursor-pointer`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(formData.features || {})[feature.key] === true}
-                        onChange={(e) => {
-                          setFormData({
-                            ...formData,
-                            features: {
-                              ...(formData.features || {}),
-                              [feature.key]: e.target.checked,
-                            },
-                          });
-                        }}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <span className="text-sm text-edubot-ink">{feature.label}</span>
-                    </label>
-                  ))}
+          {/* Visual Feature Editor */}
+          <div className={panelClasses}>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
+            <div className="space-y-4">
+              {featureGroups.map((group) => (
+                <div key={group.title}>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted">{group.title}</p>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {group.items.map((feature) => (
+                      <label key={feature.key} className={`${optionCardClasses} cursor-pointer`}>
+                        <input
+                          type="checkbox"
+                          checked={(formData.features || {})[feature.key] === true}
+                          onChange={(e) => {
+                            setFormData({
+                              ...formData,
+                              features: {
+                                ...(formData.features || {}),
+                                [feature.key]: e.target.checked,
+                              },
+                            });
+                          }}
+                          className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-edubot-ink">{feature.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              {/* Visual Limits Editor */}
-              <div className={panelClasses}>
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableLimits.map((limit) => (
-                    <div key={limit.key}>
-                      <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
-                      <Input
-                        type="number"
-                        value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
-                        onChange={(e) => {
-                          const numValue = e.target.value ? Number(e.target.value) : undefined;
-                          const newLimits = { ...(formData.limits || {}) };
-                          if (numValue !== undefined) {
-                            newLimits[limit.key] = numValue;
-                          } else {
-                            delete newLimits[limit.key];
-                          }
-                          setFormData({
-                            ...formData,
-                            limits: newLimits,
-                          });
-                        }}
-                        placeholder="0 = чексиз"
-                      />
-                    </div>
-                  ))}
+          {/* Visual Limits Editor */}
+          <div className={panelClasses}>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {availableLimits.map((limit) => (
+                <div key={limit.key}>
+                  <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
+                  <Input
+                    type="number"
+                    value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
+                    onChange={(e) => {
+                      const numValue = e.target.value ? Number(e.target.value) : undefined;
+                      const newLimits = { ...(formData.limits || {}) };
+                      if (numValue !== undefined) {
+                        newLimits[limit.key] = numValue;
+                      } else {
+                        delete newLimits[limit.key];
+                      }
+                      setFormData({
+                        ...formData,
+                        limits: newLimits,
+                      });
+                    }}
+                    placeholder="0 = чексиз"
+                  />
                 </div>
-              </div>
-              {formError && (
-                <Alert variant="error">{formError}</Alert>
-              )}
-              <div className="flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => { setShowCreateForm(false); resetForm(); }}
-                  disabled={formLoading}
-                >
-                  Жокко чыгаруу
-                </Button>
-                <Button type="submit" disabled={formLoading}>
-                  {formLoading ? 'Сактоо...' : 'Сактоо'}
-                </Button>
-              </div>
+              ))}
+            </div>
+          </div>
+          {formError && (
+            <Alert variant="error">{formError}</Alert>
+          )}
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => { setShowCreateForm(false); resetForm(); }}
+              disabled={formLoading}
+            >
+              Жокко чыгаруу
+            </Button>
+            <Button type="submit" disabled={formLoading}>
+              {formLoading ? 'Сактоо...' : 'Сактоо'}
+            </Button>
+          </div>
         </form>
       </FormModal>
 
@@ -401,117 +425,121 @@ export function PlansPage() {
       >
         {editingPlan && (
           <form onSubmit={handleEditSubmit} className="space-y-4">
+            <Input
+              label="Тарифтин аталышы"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <Input
+              label="Код"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
+              required
+            />
+            <Input
+              label="Сүрөттөмө"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Тарифтин аталышы"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                label="Айлык баа"
+                type="number"
+                value={formData.monthlyPrice ?? ''}
+                onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
               />
               <Input
-                label="Код"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
-                required
+                label="Жылдык баа"
+                type="number"
+                value={formData.yearlyPrice ?? ''}
+                onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
               />
-              <Input
-                label="Сүрөттөмө"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Айлык баа"
-                  type="number"
-                  value={formData.monthlyPrice ?? ''}
-                  onChange={(e) => setFormData({ ...formData, monthlyPrice: normalizePriceInput(e.target.value) })}
-                />
-                <Input
-                  label="Жылдык баа"
-                  type="number"
-                  value={formData.yearlyPrice ?? ''}
-                  onChange={(e) => setFormData({ ...formData, yearlyPrice: normalizePriceInput(e.target.value) })}
-                />
-              </div>
-              <Input
-                label="Валюта"
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              />
+            </div>
+            <Input
+              label="Валюта"
+              value={formData.currency}
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+            />
 
-              {/* Visual Feature Editor */}
-              <div className={panelClasses}>
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableFeatures.map((feature) => (
-                    <label
-                      key={feature.key}
-                      className={`${optionCardClasses} cursor-pointer`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(formData.features || {})[feature.key] === true}
-                        onChange={(e) => {
-                          setFormData({
-                            ...formData,
-                            features: {
-                              ...(formData.features || {}),
-                              [feature.key]: e.target.checked,
-                            },
-                          });
-                        }}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <span className="text-sm text-edubot-ink">{feature.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visual Limits Editor */}
-              <div className={panelClasses}>
-                <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availableLimits.map((limit) => (
-                    <div key={limit.key}>
-                      <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
-                      <Input
-                        type="number"
-                        value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
-                        onChange={(e) => {
-                          const numValue = e.target.value ? Number(e.target.value) : undefined;
-                          const newLimits = { ...(formData.limits || {}) };
-                          if (numValue !== undefined) {
-                            newLimits[limit.key] = numValue;
-                          } else {
-                            delete newLimits[limit.key];
-                          }
-                          setFormData({
-                            ...formData,
-                            limits: newLimits,
-                          });
-                        }}
-                        placeholder="0 = чексиз"
-                      />
+            {/* Visual Feature Editor */}
+            <div className={panelClasses}>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Функциялар</h3>
+              <div className="space-y-4">
+                {featureGroups.map((group) => (
+                  <div key={group.title}>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted">{group.title}</p>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {group.items.map((feature) => (
+                        <label key={feature.key} className={`${optionCardClasses} cursor-pointer`}>
+                          <input
+                            type="checkbox"
+                            checked={(formData.features || {})[feature.key] === true}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                features: {
+                                  ...(formData.features || {}),
+                                  [feature.key]: e.target.checked,
+                                },
+                              });
+                            }}
+                            className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="text-sm text-edubot-ink">{feature.label}</span>
+                        </label>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-              {formError && (
-                <Alert variant="error">{formError}</Alert>
-              )}
-              <div className="flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => { setShowEditForm(false); setEditingPlan(null); resetForm(); }}
-                  disabled={formLoading}
-                >
-                  Жокко чыгаруу
-                </Button>
-                <Button type="submit" disabled={formLoading}>
-                  {formLoading ? 'Сактоо...' : 'Сактоо'}
-                </Button>
+            </div>
+
+            {/* Visual Limits Editor */}
+            <div className={panelClasses}>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">Лимиттер</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {availableLimits.map((limit) => (
+                  <div key={limit.key}>
+                    <label className="mb-1 block text-sm text-edubot-muted">{limit.label}</label>
+                    <Input
+                      type="number"
+                      value={(formData.limits || {})[limit.key] !== undefined ? String((formData.limits || {})[limit.key]) : ''}
+                      onChange={(e) => {
+                        const numValue = e.target.value ? Number(e.target.value) : undefined;
+                        const newLimits = { ...(formData.limits || {}) };
+                        if (numValue !== undefined) {
+                          newLimits[limit.key] = numValue;
+                        } else {
+                          delete newLimits[limit.key];
+                        }
+                        setFormData({
+                          ...formData,
+                          limits: newLimits,
+                        });
+                      }}
+                      placeholder="0 = чексиз"
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
+            {formError && (
+              <Alert variant="error">{formError}</Alert>
+            )}
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => { setShowEditForm(false); setEditingPlan(null); resetForm(); }}
+                disabled={formLoading}
+              >
+                Жокко чыгаруу
+              </Button>
+              <Button type="submit" disabled={formLoading}>
+                {formLoading ? 'Сактоо...' : 'Сактоо'}
+              </Button>
+            </div>
           </form>
         )}
       </FormModal>
@@ -699,18 +727,25 @@ export function PlansPage() {
                     </div>
                     {Object.keys(plan.features).length > 0 && (
                       <div className="mt-4 border-t border-edubot-line pt-4">
-                        <h4 className="mb-3 text-sm font-medium text-edubot-dark">Функциялардын тизмеси:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {availableFeatures.map((feature) => (
-                            <div key={feature.key} className="flex items-center space-x-2 text-sm">
-                              {plan.features[feature.key] ? (
-                                <Check className="h-4 w-4 flex-shrink-0 text-emerald-600" />
-                              ) : (
-                                <X className="h-4 w-4 flex-shrink-0 text-slate-400" />
-                              )}
-                              <span className={plan.features[feature.key] ? 'text-edubot-ink' : 'text-slate-400'}>
-                                {feature.label}
-                              </span>
+                        <h4 className="mb-3 text-sm font-medium text-edubot-dark">Функциялар</h4>
+                        <div className="space-y-4">
+                          {featureGroups.map((group) => (
+                            <div key={group.title}>
+                              <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-edubot-muted">{group.title}</p>
+                              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                {group.items.map((feature) => (
+                                  <div key={feature.key} className="flex items-center space-x-2 text-sm">
+                                    {plan.features[feature.key] ? (
+                                      <Check className="h-4 w-4 flex-shrink-0 text-emerald-600" />
+                                    ) : (
+                                      <X className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                                    )}
+                                    <span className={plan.features[feature.key] ? 'text-edubot-ink' : 'text-slate-400'}>
+                                      {feature.label}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -719,12 +754,15 @@ export function PlansPage() {
                     {Object.keys(plan.limits).length > 0 && (
                       <div className="mt-4 border-t border-edubot-line pt-4">
                         <h4 className="mb-2 text-sm font-medium text-edubot-dark">Лимиттер:</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          {Object.entries(plan.limits).map(([key, value]) => (
-                            <div key={key} className="text-edubot-muted">
-                              <span className="font-medium">{key}:</span> {String(value)}
-                            </div>
-                          ))}
+                        <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+                          {Object.entries(plan.limits).map(([key, value]) => {
+                            const label = availableLimits.find((limit) => limit.key === key)?.label || key;
+                            return (
+                              <div key={key} className="text-edubot-muted">
+                                <span className="font-medium">{label}:</span> {String(value)}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

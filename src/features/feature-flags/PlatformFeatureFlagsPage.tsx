@@ -66,6 +66,14 @@ const FLAG_DISPLAY_INFO: Record<string, { label: string; description: string; is
     label: 'AI жооп сунушу функциясынын жеткиликтүүлүгү',
     description: 'Лид, байланыш жана келишим карточкаларында follow-up жооп сунушун түзүү мүмкүнчүлүгүн платформа боюнча жеткиликтүү кылат.',
   },
+  ai_operator_guidance_enabled: {
+    label: 'AI сунуштарынын жеткиликтүүлүгү',
+    description: 'Приоритет, тобокелдик, кийинки аракет жана байланыш жыйынтыгы сыяктуу AI сунуштарын платформа боюнча жеткиликтүү кылат.',
+  },
+  ai_insight_persistence_enabled: {
+    label: 'AI жыйынтыктарын сактоо',
+    description: 'AI жыйынтыктарын сактоо жана тарыхын көрүү мүмкүнчүлүгүн платформа боюнча жеткиликтүү кылат. Бул фидбек жана AI жыйынтыктарынын тарыхы үчүн керек.',
+  },
 };
 
 export function PlatformFeatureFlagsPage() {
@@ -134,6 +142,9 @@ export function PlatformFeatureFlagsPage() {
 
   // Get unique categories
   const categories = Array.from(new Set(flags.map(f => f.category || 'Глобалдык жөндөөлөр')));
+  const aiFlagKeys = ['ai_assist_enabled', 'ai_followup_drafts_enabled', 'ai_operator_guidance_enabled', 'ai_insight_persistence_enabled'];
+  const enabledCount = flags.filter((flag) => flag.enabled).length;
+  const aiEnabledCount = flags.filter((flag) => aiFlagKeys.includes(flag.key) && flag.enabled).length;
 
   const toggleDescription = (key: string) => {
     setExpandedDescriptions(prev => {
@@ -151,18 +162,39 @@ export function PlatformFeatureFlagsPage() {
     <div>
       <PageHeader
         title="Платформа функциялары"
-        description="Бул бөлүмдө функциялар платформа деңгээлинде күйгүзүлөт же өчүрүлөт. Уюм үчүн жеткиликтүүлүк тарифке жана өзүнчө уруксаттарга жараша аныкталат."
+        description="Бул жерден жалпы жеткиликтүүлүктү башкарасыз. Төмөнкү өчүргүч бардык уюмдарга бирдей таасир этет."
       />
 
-      <Alert variant="info" title="Платформа деңгээлиндеги башкаруу" className="mb-6">
-        Эгер функция бул жерде өчүрүлсө, ал эч бир уюмга жеткиликтүү болбойт. Эгер күйгүзүлсө, аны колдонуу уюмдун тарифи жана өзүнчө уруксаттары аркылуу аныкталат.
+      <Alert variant="info" title="Кыска эреже" className="mb-6">
+        Платформада өчүрүлгөн функцияны эч бир уюм колдоно албайт. Платформада күйгүзүлгөн функция болсо, аны уюмдун тарифи жана уруксаты чечет.
       </Alert>
+
+      <div className="mb-6 grid gap-3 md:grid-cols-3">
+        <Card className="app-surface">
+          <CardContent className="p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-edubot-muted">Жалпы функциялар</div>
+            <div className="mt-2 text-2xl font-semibold text-edubot-dark">{flags.length}</div>
+          </CardContent>
+        </Card>
+        <Card className="app-surface">
+          <CardContent className="p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-edubot-muted">Күйгүзүлгөн</div>
+            <div className="mt-2 text-2xl font-semibold text-edubot-dark">{enabledCount}</div>
+          </CardContent>
+        </Card>
+        <Card className="app-surface">
+          <CardContent className="p-4">
+            <div className="text-xs uppercase tracking-[0.16em] text-edubot-muted">AI функциялары</div>
+            <div className="mt-2 text-2xl font-semibold text-edubot-dark">{aiEnabledCount} / {aiFlagKeys.length}</div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="app-surface">
         <CardHeader>
           <SectionIntro
-            title="Платформа функциялары"
-            description="Бул жердеги күйгүзүү же өчүрүү бардык уюмдарга таасир этет. Ар бир уюм үчүн так жеткиликтүүлүк тарифке жана өзүнчө уруксаттарга жараша аныкталат."
+            title="Функцияларды тез башкаруу"
+            description="Категория боюнча керектүү өчүргүчтү таап, жалпы жеткиликтүүлүктү дароо өзгөртүңүз."
           />
         </CardHeader>
         <CardContent>
@@ -211,7 +243,10 @@ export function PlatformFeatureFlagsPage() {
 
                 return (
                   <div key={category}>
-                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">{category}</h3>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-edubot-muted">{category}</h3>
+                      <Badge variant="neutral">{filteredCategoryFlags.length}</Badge>
+                    </div>
                     <div className="space-y-3">
                       {filteredCategoryFlags.map((flag) => (
                         <div
