@@ -235,6 +235,7 @@ export function TenantDetailPage() {
       {activeTab === 'settings' && (
         <TenantSettingsTab
           settingsLoading={settingsLoading}
+          tenant={tenant}
           settings={settings}
           settingsForm={settingsForm}
           onSettingsFormChange={setSettingsForm}

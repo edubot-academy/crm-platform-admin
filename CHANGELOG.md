@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-05-06
+
+### Added
+- **WhatsApp Integration Management**: Platform-level WhatsApp settings and monitoring
+  - Added WhatsApp settings API endpoints for tenant configuration
+  - Added WhatsApp health monitoring with connection status and webhook tracking
+  - Added WhatsApp failed events tracking for debugging webhook issues
+  - Created comprehensive WhatsApp status dashboard in tenant settings
+  - Added visual indicators for feature flags, module status, and plan requirements
+  - Added detailed credential status display with last verification and activity timestamps
+  - Added error display for last WhatsApp webhook failures
+  - Added platform admin guidance for credential management boundaries
+
+### Fixed
+- Fixed missing tenant prop in TenantSettingsTab component
+
 ## [0.8.1] - 2026-05-05
 
 ### Fixed
