@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-05-06
+
+### Added
+- **WhatsApp Credential Management**: Platform admin can now create and update tenant WhatsApp credentials
+  - Added WhatsApp credential creation form with Business Account ID, Phone Number ID, display number, and access token
+  - Added WhatsApp credential update functionality for existing configurations
+  - Added form validation and error handling for credential operations
+  - Added loading states and success/error feedback for credential operations
+  - Added access token preview display for existing credentials
+  - Added conditional form fields based on existing credential state
+
+### Changed
+- Updated WhatsApp settings description to reflect credential management capabilities
+- Improved user experience with better error messaging and validation feedback
+
+### Fixed
+- Added missing `phone_number_id` field to WhatsApp settings update payload interface
+
 ## [0.8.2] - 2026-05-06
 
 ### Added

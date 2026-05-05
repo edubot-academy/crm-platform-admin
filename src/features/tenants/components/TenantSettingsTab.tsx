@@ -8,6 +8,7 @@ import {
   type TenantConfig,
   type UpdateTenantConfigDto,
 } from '../tenantSettingsApi';
+import toast from 'react-hot-toast';
 import { Alert } from '../../../shared/components/Alert';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
@@ -29,6 +30,20 @@ interface TenantSettingsTabProps {
   settingsSaving: boolean;
 }
 
+type WhatsAppFormState = {
+  whatsapp_business_account_id: string;
+  phone_number_id: string;
+  display_phone_number: string;
+  access_token: string;
+};
+
+const emptyWhatsAppForm: WhatsAppFormState = {
+  whatsapp_business_account_id: '',
+  phone_number_id: '',
+  display_phone_number: '',
+  access_token: '',
+};
+
 export function TenantSettingsTab({
   settingsLoading,
   tenant,
@@ -47,32 +62,100 @@ export function TenantSettingsTab({
   const [whatsAppHealth, setWhatsAppHealth] = useState<PlatformTenantWhatsAppHealth | null>(null);
   const [whatsAppFailedEvents, setWhatsAppFailedEvents] = useState<PlatformTenantWhatsAppFailedEvent[]>([]);
   const [whatsAppLoading, setWhatsAppLoading] = useState(true);
+  const [whatsAppSaving, setWhatsAppSaving] = useState(false);
+  const [whatsAppForm, setWhatsAppForm] = useState<WhatsAppFormState>(emptyWhatsAppForm);
+  const [whatsAppError, setWhatsAppError] = useState<string | null>(null);
+
+  const syncWhatsAppForm = (settings: PlatformTenantWhatsAppSettings | null) => {
+    if (!settings) {
+      setWhatsAppForm(emptyWhatsAppForm);
+      return;
+    }
+
+    setWhatsAppForm({
+      whatsapp_business_account_id: settings.whatsapp_business_account_id || '',
+      phone_number_id: settings.phone_number_id || '',
+      display_phone_number: settings.display_phone_number || '',
+      access_token: '',
+    });
+  };
+
+  const loadWhatsAppData = async () => {
+    setWhatsAppLoading(true);
+    setWhatsAppError(null);
+
+    try {
+      const [settingsResponse, healthResponse, failedEvents] = await Promise.all([
+        tenantSettingsApi.getTenantWhatsAppSettings(String(tenant.id)).catch(() => ({ message: 'not-configured' } as const)),
+        tenantSettingsApi.getTenantWhatsAppHealth(String(tenant.id)).catch(() => null),
+        tenantSettingsApi.getTenantWhatsAppFailedEvents(String(tenant.id), 5).catch(() => []),
+      ]);
+
+      const settings = 'id' in settingsResponse ? settingsResponse : null;
+      setWhatsAppSettings(settings);
+      syncWhatsAppForm(settings);
+      setWhatsAppHealth(healthResponse);
+      setWhatsAppFailedEvents(failedEvents);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'WhatsApp жөндөөлөрүн жүктөө мүмкүн болгон жок';
+      setWhatsAppError(message);
+      setWhatsAppSettings(null);
+      setWhatsAppHealth(null);
+      setWhatsAppFailedEvents([]);
+      syncWhatsAppForm(null);
+    } finally {
+      setWhatsAppLoading(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
 
-    setWhatsAppLoading(true);
-    Promise.all([
-      tenantSettingsApi.getTenantWhatsAppSettings(String(tenant.id)).catch(() => ({ message: 'not-configured' } as const)),
-      tenantSettingsApi.getTenantWhatsAppHealth(String(tenant.id)).catch(() => null),
-      tenantSettingsApi.getTenantWhatsAppFailedEvents(String(tenant.id), 5).catch(() => []),
-    ])
-      .then(([settingsResponse, healthResponse, failedEvents]) => {
-        if (!isMounted) return;
-        const settings = 'id' in settingsResponse ? settingsResponse : null;
-        setWhatsAppSettings(settings);
-        setWhatsAppHealth(healthResponse);
-        setWhatsAppFailedEvents(failedEvents);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setWhatsAppLoading(false);
-      });
+    void (async () => {
+      await loadWhatsAppData();
+      if (!isMounted) return;
+    })();
 
     return () => {
       isMounted = false;
     };
   }, [tenant.id]);
+
+  const handleWhatsAppFormChange = (field: keyof WhatsAppFormState, value: string) => {
+    setWhatsAppForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleWhatsAppSave = async () => {
+    setWhatsAppSaving(true);
+    setWhatsAppError(null);
+
+    try {
+      const response = whatsAppSettings
+        ? await tenantSettingsApi.updateTenantWhatsAppSettings(String(tenant.id), {
+            whatsapp_business_account_id: whatsAppForm.whatsapp_business_account_id.trim() || undefined,
+            phone_number_id: whatsAppForm.phone_number_id.trim() || undefined,
+            display_phone_number: whatsAppForm.display_phone_number.trim() || undefined,
+            access_token: whatsAppForm.access_token.trim() || undefined,
+          })
+        : await tenantSettingsApi.createTenantWhatsAppSettings(String(tenant.id), {
+            whatsapp_business_account_id: whatsAppForm.whatsapp_business_account_id.trim(),
+            phone_number_id: whatsAppForm.phone_number_id.trim(),
+            display_phone_number: whatsAppForm.display_phone_number.trim(),
+            access_token: whatsAppForm.access_token.trim(),
+          });
+
+      setWhatsAppSettings(response.account);
+      syncWhatsAppForm(response.account);
+      toast.success(response.message);
+      await loadWhatsAppData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'WhatsApp жөндөөлөрүн сактоо ишке ашкан жок';
+      setWhatsAppError(message);
+      toast.error(message);
+    } finally {
+      setWhatsAppSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -80,7 +163,7 @@ export function TenantSettingsTab({
         <CardHeader>
           <SectionIntro
             title="WhatsApp Release 3 даярдыгы"
-            description="Platform admin үчүн tenant деңгээлиндеги entitlement жана rollout көрүнүшү."
+            description="Platform admin үчүн tenant деңгээлиндеги entitlement, rollout жана credential башкаруу көрүнүшү."
           />
         </CardHeader>
         <CardContent className="space-y-4">
@@ -119,9 +202,9 @@ export function TenantSettingsTab({
             </div>
           </div>
 
-          <Alert variant="info" title="Платформа чеги">
-            Tenant’тин тирүү WhatsApp credential'дары жана webhook саламаттыгы tenant CRM ичиндеги жөндөөлөр бетинде көрсөтүлөт.
-            Бул бет азыр entitlement, модуль жана rollout даярдыгын гана көрсөтөт.
+          <Alert variant="info" title="Platform admin көзөмөлү">
+            Бул бөлүмдөн tenant үчүн WhatsApp credential'дарын түзүп же жаңырта аласыз. Бул rollout абалын, webhook
+            саламаттыгын жана акыркы каталарды дагы көрсөтөт.
           </Alert>
 
           <div className="rounded-2xl border border-edubot-line/80 bg-white/70 px-4 py-4">
@@ -145,6 +228,12 @@ export function TenantSettingsTab({
             <SkeletonCard lines={3} />
           ) : (
             <div className="rounded-2xl border border-edubot-line/80 bg-white/70 px-4 py-4">
+              {whatsAppError ? (
+                <Alert variant="error" className="mb-4" title="WhatsApp жөндөөлөрү">
+                  {whatsAppError}
+                </Alert>
+              ) : null}
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2 text-sm text-edubot-muted">
                   <p>
@@ -176,16 +265,60 @@ export function TenantSettingsTab({
                 </div>
               </div>
 
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Input
+                  label="WhatsApp Business Account ID"
+                  value={whatsAppForm.whatsapp_business_account_id}
+                  onChange={(event) => handleWhatsAppFormChange('whatsapp_business_account_id', event.target.value)}
+                  placeholder="1234567890"
+                />
+                <Input
+                  label="Phone Number ID"
+                  value={whatsAppForm.phone_number_id}
+                  onChange={(event) => handleWhatsAppFormChange('phone_number_id', event.target.value)}
+                  placeholder="10987654321"
+                />
+                <Input
+                  label="Көрсөтүлгөн номер"
+                  value={whatsAppForm.display_phone_number}
+                  onChange={(event) => handleWhatsAppFormChange('display_phone_number', event.target.value)}
+                  placeholder="+996 500 000 000"
+                />
+                <Input
+                  label={whatsAppSettings ? 'Жаңы access token' : 'Access token'}
+                  type="password"
+                  value={whatsAppForm.access_token}
+                  onChange={(event) => handleWhatsAppFormChange('access_token', event.target.value)}
+                  placeholder={whatsAppSettings?.access_token_preview || 'EAAG...'}
+                  helperText={
+                    whatsAppSettings?.access_token_preview
+                      ? `Сакталган токен: ${whatsAppSettings.access_token_preview}`
+                      : undefined
+                  }
+                />
+              </div>
+
               {whatsAppHealth?.lastError ? (
                 <Alert variant="warning" className="mt-4" title="Акыркы WhatsApp ката">
                   {whatsAppHealth.lastError}
                 </Alert>
               ) : null}
 
-              <Alert variant="info" className="mt-4" title="Credential чеги">
-                Platform admin tenant үчүн WhatsApp credential'дарын өзгөртпөйт. Business Account ID, Phone Number ID,
-                access token жана connection test tenant CRM ичиндеги Settings бетинен башкарылат.
-              </Alert>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => void handleWhatsAppSave()}
+                  disabled={
+                    whatsAppSaving
+                    || !whatsAppForm.whatsapp_business_account_id.trim()
+                    || !whatsAppForm.phone_number_id.trim()
+                    || !whatsAppForm.display_phone_number.trim()
+                    || (!whatsAppSettings && !whatsAppForm.access_token.trim())
+                  }
+                >
+                  {whatsAppSaving ? 'Сактоо...' : whatsAppSettings ? 'WhatsApp жаңыртуу' : 'WhatsApp туташтыруу'}
+                </Button>
+              </div>
 
               {whatsAppFailedEvents.length > 0 ? (
                 <div className="mt-4 space-y-3">

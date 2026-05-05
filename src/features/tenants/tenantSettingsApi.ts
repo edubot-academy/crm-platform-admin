@@ -49,6 +49,7 @@ export interface PlatformTenantWhatsAppSettingsPayload {
 
 export interface PlatformTenantWhatsAppSettingsUpdatePayload {
   whatsapp_business_account_id?: string;
+  phone_number_id?: string;
   display_phone_number?: string;
   access_token?: string;
 }
